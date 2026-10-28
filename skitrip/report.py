@@ -39,10 +39,12 @@ def air_rows(a, r, cfg) -> str:
     if a:
         return (f'<dt>Перелёт TLL⇄{e(a["airport"])}</dt><dd><a href="{e(a["url"])}">{eur(a["price"])}</a> '
                 f'<span class="mut">{e(a.get("airlines") or "")}{", пересадок: " + str(a["stops"]) if a.get("stops") else ""}</span></dd>'
-                f'<dt>Машина + топливо</dt><dd>{eur(a["transfer"])} <span class="mut">{a["km"]} км в одну сторону</span></dd>')
+                + (f'<dt>Машина + топливо</dt><dd>{eur(a["transfer"])} <span class="mut">{a["km"]} км в одну сторону</span></dd>' if a["transfer"]
+                 else f'<dt>Дорога</dt><dd class="mut">{a["km"]} км от аэропорта, ~{a["hours"]} ч — не в сумме</dd>'))
     code, km = min(r["airports"].items(), key=lambda x: x[1])
     return (f'<dt>Перелёт</dt><dd class="mut">нет данных — смотрите вручную до {e(", ".join(r["airports"]))}</dd>'
-            f'<dt>Машина + топливо</dt><dd>{eur(transfer_cost(km, cfg))} <span class="mut">от {e(code)}, {km} км</span></dd>')
+            + (f'<dt>Машина + топливо</dt><dd>{eur(transfer_cost(km, cfg))} <span class="mut">от {e(code)}, {km} км</span></dd>' if transfer_cost(km, cfg)
+            else f'<dt>Дорога</dt><dd class="mut">от {e(code)}, {km} км — не в сумме</dd>'))
 
 
 def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list[dict], demo: bool = False) -> str:
@@ -140,7 +142,7 @@ table.ref{{border-collapse:collapse;width:100%;font-size:13px;background:var(--c
 {banner}
 <h2>Курорт × неделя заезда, тыс. €</h2>
 <div class="scroll"><table class="heat"><thead><tr><th></th>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table></div>
-<p class="sub">Сумма = перелёт на всех + аренда машины и топливо от лучшего аэропорта + жильё ({cfg['lodging']['stat']} по Airbnb) + ски-пассы. Серые клетки — нет цены перелёта или жилья.</p>
+<p class="sub">Сумма = перелёт на всех{' + аренда машины и топливо' if cfg['transfer']['car_rent_week'] or cfg['transfer']['per_km'] else ' (машина и дорога не считаются)'} из лучшего аэропорта + жильё ({cfg['lodging']['stat']} по Airbnb) + ски-пассы. Серые клетки — нет цены перелёта или жилья.</p>
 <h2>Топ {len(top)} вариантов</h2>
 <div class="cards">{''.join(cards) or '<p class="mut">Пока нет ни одного полного варианта — запустите сбор.</p>'}</div>
 <h2>Курорты и ски-пассы</h2>
