@@ -1,0 +1,36 @@
+party:
+  adults: 2
+  children:
+    - birth_date: 2020-06-01   # ← поставьте точную дату: от неё зависит, бесплатный ли ски-пасс (Австрия считает по году рождения)
+
+trip:
+  origin: TLL
+  currency: EUR
+  nights: 7
+  ski_days: 6                 # длина ски-пасса
+  checkin_weekday: 5          # 0 = пн … 5 = сб
+  season_from: 2026-12-05
+  season_to: 2027-04-10       # последняя дата заезда
+
+flights:
+  max_stops: 1
+  delay_s: [3, 7]             # пауза между запросами к Google
+  max_consecutive_errors: 4
+
+lodging:
+  source: airbnb
+  place_type: "Entire home/apt"
+  min_bedrooms: 1
+  stat: p25                   # чем считать цену жилья: p25 | median | min
+  min_results: 5              # меньше вариантов → неделя помечается «мало предложений»
+  delay_s: [4, 9]
+
+transfer:
+  car_rent_week: 320          # аренда машины на неделю, EUR (оценка)
+  per_km: 0.16                # топливо + платные дороги, EUR/км (оценка)
+
+costs:
+  ski_bag_per_person_rt: 0    # если везёте свои доски/лыжи — сбор авиакомпании туда-обратно на человека
+
+alerts:
+  drop_pct: 10
