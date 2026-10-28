@@ -17,7 +17,7 @@ import webbrowser
 
 from . import plan, report
 from .config import ROOT, checkin_dates, load_config, load_resorts
-from .passes import party_pass_cost
+from .passes import party_pass_cost, pass_party
 from .store import Store
 
 DB = ROOT / "data" / "prices.sqlite"
@@ -46,7 +46,7 @@ def cmd_passes(args, cfg):
     print(f"Ски-пассы на группу, первый ски-день {day}:\n")
     rows = []
     for r in resorts:
-        q = party_pass_cost(r, cfg["party"], day)
+        q = party_pass_cost(r, pass_party(cfg), day)
         rows.append((q.total, r, q))
     for total, r, q in sorted(rows, key=lambda x: x[0]):
         print(f"{total:8.0f} €  {r['name']:<26} [{q.status}] {q.period}")

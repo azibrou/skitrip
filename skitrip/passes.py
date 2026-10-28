@@ -37,6 +37,14 @@ def child_price(lp: dict, period: dict, birth: dt.date, first_ski_day: dt.date) 
     return period["adult"], "взрослый тариф"
 
 
+def pass_party(cfg: dict) -> dict:
+    """Кому покупаем ски-пассы: вся группа или только взрослые (trip.pass_children: false)."""
+    party = cfg["party"]
+    if cfg["trip"].get("pass_children", True):
+        return party
+    return {**party, "children": []}
+
+
 def party_pass_cost(resort: dict, party: dict, first_ski_day: dt.date) -> PassQuote:
     lp = resort["lift_pass"]
     period = period_for(lp, first_ski_day)

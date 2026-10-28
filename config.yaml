@@ -8,6 +8,7 @@ trip:
   currency: EUR
   nights: 7
   ski_days: 6                 # длина ски-пасса
+  pass_children: false        # false — ски-пассы только на взрослых, ребёнок не катается
   checkin_weekday: 5          # 0 = пн … 5 = сб
   min_top_m: 3000             # курорты с верхней точкой ниже — не рассматриваем
   season_from: 2026-12-05

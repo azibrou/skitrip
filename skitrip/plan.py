@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-from .passes import party_pass_cost
+from .passes import party_pass_cost, pass_party
 
 
 def transfer_cost(km: float, cfg: dict) -> float:
@@ -21,7 +21,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
     for r in resorts:
         for wk in weeks:
             first_ski = wk + dt.timedelta(days=1)
-            passes = party_pass_cost(r, party, first_ski)
+            passes = party_pass_cost(r, pass_party(cfg), first_ski)
 
             best_air = None
             for code, km in r["airports"].items():

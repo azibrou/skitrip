@@ -95,3 +95,10 @@ def test_plan_marks_missing():
     wk = D(2027, 1, 9)
     [o] = plan.build(cfg, [R["tignes"]], [wk], {}, {}, {})
     assert o["total"] is None and o["missing"] == ["перелёт", "жильё"]
+
+
+def test_pass_adults_only():
+    cfg = load_config()
+    cfg["trip"]["pass_children"] = False
+    [o] = plan.build(cfg, [R["kaprun"]], [D(2027, 1, 9)], {}, {}, {})
+    assert o["passes"].total == 2 * 440
