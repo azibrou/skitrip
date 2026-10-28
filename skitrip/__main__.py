@@ -29,7 +29,7 @@ def _sleep(rng):
 
 
 def select(args, cfg):
-    resorts = load_resorts()
+    resorts = [r for r in load_resorts() if r["top_m"] >= cfg["trip"].get("min_top_m", 0)]
     if args.resorts:
         resorts = [r for r in resorts if r["id"] in args.resorts]
     weeks = checkin_dates(cfg)

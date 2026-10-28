@@ -56,17 +56,14 @@ def parse(html: str) -> list[dict]:
     return out
 
 
-def fetch_roundtrip(origin: str, dest: str, out: dt.date, ret: dt.date, party: dict, cfg: dict) -> dict | None:
+def _search(legs: list[tuple[str, str, dt.date]], trip: str, party: dict, cfg: dict) -> dict | None:
+    """Самый дешёвый вариант в выдаче Google или None."""
     from fast_flights import FlightQuery, FlightsNotFound, Passengers, create_query
 
-    n_kids = len(party.get("children", []))
     query = create_query(
-        flights=[
-            FlightQuery(date=out.isoformat(), from_airport=origin, to_airport=dest),
-            FlightQuery(date=ret.isoformat(), from_airport=dest, to_airport=origin),
-        ],
-        trip="round-trip",
-        passengers=Passengers(adults=party["adults"], children=n_kids),
+        flights=[FlightQuery(date=d.isoformat(), from_airport=a, to_airport=b) for a, b, d in legs],
+        trip=trip,
+        passengers=Passengers(adults=party["adults"], children=len(party.get("children", []))),
         currency=cfg["trip"]["currency"],
         language="en-GB",
         max_stops=cfg["flights"].get("max_stops"),
@@ -75,12 +72,24 @@ def fetch_roundtrip(origin: str, dest: str, out: dt.date, ret: dt.date, party: d
         results = parse(fetch_html(query))
     except FlightsNotFound:
         return None
-    if not results:
+    return min(results, key=lambda r: r["price"]) if results else None
+
+
+def fetch_roundtrip(origin: str, dest: str, out: dt.date, ret: dt.date, party: dict, cfg: dict) -> dict | None:
+    n_kids = len(party.get("children", []))
+    url = google_link(origin, dest, out, ret, party["adults"], n_kids)
+    best = _search([(origin, dest, out), (dest, origin, ret)], "round-trip", party, cfg)
+    if best:
+        return {"price": best["price"], "airlines": ", ".join(best["airlines"]),
+                "stops": max(best["legs"] - 1, 0), "url": url}
+    # На части дат Google не отдаёт цену туда-обратно, хотя рейсы в одну сторону есть —
+    # тогда складываем два билета в одну сторону.
+    there = _search([(origin, dest, out)], "one-way", party, cfg)
+    if not there:
         return None
-    best = min(results, key=lambda r: r["price"])
-    return {
-        "price": best["price"],
-        "airlines": ", ".join(best["airlines"]),
-        "stops": max(best["legs"] - 1, 0),
-        "url": google_link(origin, dest, out, ret, party["adults"], n_kids),
-    }
+    back = _search([(dest, origin, ret)], "one-way", party, cfg)
+    if not back:
+        return None
+    airlines = list(dict.fromkeys(there["airlines"] + back["airlines"]))
+    return {"price": there["price"] + back["price"], "airlines": ", ".join(airlines) + " (2 × в одну сторону)",
+            "stops": max(there["legs"], back["legs"]) - 1, "url": url}
