@@ -4,6 +4,7 @@ from __future__ import annotations
 import datetime as dt
 import html
 
+from .passes import age_on
 from .plan import transfer_cost, has_flights, ranked, score
 
 STATUS = {
@@ -110,7 +111,8 @@ def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list[d
 <td>{e(snow)}</td>
 <td class="mut">{e(', '.join(f'{k} {v} км' for k, v in r['airports'].items()))}</td></tr>""")
 
-    kid_txt = ", ".join(f"ребёнок р. {c['birth_date']:%d.%m.%Y}" for c in kids)
+    # возраст, а не дата рождения: отчёт может быть опубликован
+    kid_txt = ", ".join(f"ребёнок {age_on(c['birth_date'], weeks[0])} лет" for c in kids) if weeks else ""
     filled = sum(1 for o in options if score(o, full) is not None)
     nofly = "" if full or not totals else '<p class="demo">Перелётов в базе нет — суммы БЕЗ перелёта: жильё + ски-пассы + машина от ближайшего аэропорта.</p>'
     banner = nofly + '<p class="demo">ДЕМО: перелёты и жильё — синтетические цифры, чтобы показать вид отчёта. Ски-пассы — реальные данные из resorts.yaml.</p>' if demo else ""

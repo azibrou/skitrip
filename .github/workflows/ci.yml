@@ -3,6 +3,16 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -18,7 +28,27 @@ jobs:
       # Демо-отчёт на синтетике: проверяет, что отчёт собирается. Реальный сбор цен
       # отсюда не запускаем — Google и Airbnb блокируют IP дата-центров.
       - run: python -m skitrip demo
-      - uses: actions/upload-artifact@v4
+      # Сайт: последний слепок с реальными ценами — главная страница, все слепки — в /snapshots/.
+      - name: Build site
+        run: |
+          mkdir -p site
+          latest=$(ls -d snapshots/*/ | sort | tail -1)
+          cp "${latest}report.html" site/index.html
+          cp -r snapshots site/snapshots
+          find site/snapshots -name '*.sqlite' -delete
+          cp data/report-demo.html site/demo.html
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
         with:
-          name: report-demo
-          path: data/report-demo.html
+          path: site
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
