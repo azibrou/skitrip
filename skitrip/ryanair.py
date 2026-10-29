@@ -27,7 +27,13 @@ def _get(path: str, **params) -> dict | list:
 @lru_cache(maxsize=None)
 def routes(origin: str) -> frozenset[str]:
     """Аэропорты, куда Ryanair летает из origin."""
-    data = _get(f"views/locate/searchWidget/routes/en/airport/{origin}")
+    import urllib.error
+    try:
+        data = _get(f"views/locate/searchWidget/routes/en/airport/{origin}")
+    except urllib.error.HTTPError as ex:
+        if ex.code == 404:  # Ryanair сюда не летает
+            return frozenset()
+        raise
     return frozenset(r["arrivalAirport"]["code"] for r in data)
 
 

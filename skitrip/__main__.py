@@ -113,6 +113,37 @@ def cmd_run(args, cfg):
             best = ", ".join(f"{a} {q['price']:.0f} €" for a, q in sorted(found.items(), key=lambda x: x[1]["price"])[:4])
             print(f"[{i}/{len(jobs)}] пересадки {o} {w}: {len(found)} аэропортов. {best}")
 
+    hubs = cfg.get("self_transfer", {}).get("hubs") or []
+    if not args.skip_hubs and hubs:
+        from . import flights, selftransfer
+        airports = sorted({a for r in resorts for a in r["airports"]})
+        origins = args.origins or list(plan.origins(cfg))
+        probe = weeks[len(weeks) // 2]
+        for hub in hubs:
+            # куда из хаба вообще есть прямые рейсы (одна проверочная дата)
+            served = []
+            for a in airports:
+                try:
+                    if flights.oneway_options(hub, a, probe, party, cfg) or a in selftransfer.ryanair_routes(hub):
+                        served.append(a)
+                except Exception as ex:
+                    print(f"{hub}→{a}: ошибка {ex}", file=sys.stderr)
+                _sleep(cfg["flights"]["delay_s"])
+            print(f"Из {hub} прямые рейсы в: {', '.join(served) or '—'}")
+            jobs = [(o, w) for o in origins for w in weeks if o != hub]
+            for i, (o, w) in enumerate(jobs, 1):
+                ret = w + dt.timedelta(days=nights)
+                try:
+                    found = selftransfer.search_hub_week(o, hub, w, ret, served, party, cfg,
+                                                         delay=cfg["flights"]["delay_s"])
+                except Exception as ex:
+                    print(f"[{i}/{len(jobs)}] через {hub} {o} {w}: ошибка {ex}", file=sys.stderr)
+                    continue
+                for a in airports:
+                    st.add_flight(o, a, w, ret, found.get(a), source=f"hub-{hub}")
+                best = ", ".join(f"{a} {q['price']:.0f} €" for a, q in sorted(found.items(), key=lambda x: x[1]["price"])[:4])
+                print(f"[{i}/{len(jobs)}] через {hub} {o} {w}: {best or 'нет связок'}")
+
     if not args.skip_lodging:
         from . import lodging
         jobs = [(r, w) for r in resorts for w in weeks]
@@ -195,7 +226,8 @@ def main(argv=None):
             p.add_argument("--skip-flights", action="store_true")
             p.add_argument("--skip-lodging", action="store_true")
             p.add_argument("--skip-snow", action="store_true")
-            p.add_argument("--skip-self", action="store_true", help="без поиска самостоятельных пересадок")
+            p.add_argument("--skip-self", action="store_true", help="без пересадок Ryanair через любые хабы")
+            p.add_argument("--skip-hubs", action="store_true", help="без пересадок через хабы из self_transfer.hubs")
             p.add_argument("--origins", nargs="*", help="города вылета, по умолчанию все из config.yaml")
     args = ap.parse_args(argv)
     cfg = load_config(args.config)

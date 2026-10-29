@@ -128,3 +128,14 @@ def test_self_transfer_same_day_only(monkeypatch):
     ok = {"to": "STN", "dep": T(2027, 2, 6, 8, 0), "arr": T(2027, 2, 6, 9, 0)}
     selftransfer._connect(ok, None, "EUR", 3)
     assert calls and calls[0][2] == "12:00"
+
+
+def test_hub_pair_needs_time_to_change():
+    import datetime as _dt
+    from skitrip import selftransfer
+    T = _dt.datetime
+    leg1 = {"dep": T(2027, 2, 6, 9, 45), "arr": T(2027, 2, 6, 10, 25), "price": 69}
+    early = {"dep": T(2027, 2, 6, 12, 0), "arr": T(2027, 2, 6, 14, 0), "price": 50}    # < 3 ч
+    late = {"dep": T(2027, 2, 6, 17, 45), "arr": T(2027, 2, 6, 19, 55), "price": 215}
+    p, a, b = selftransfer._best_pair([leg1], [early, late], 3)
+    assert p == 284 and b is late

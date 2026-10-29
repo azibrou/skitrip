@@ -106,3 +106,45 @@ def fetch_best(origin: str, dest: str, out: dt.date, ret: dt.date, party: dict, 
         fr = None
     options = [x for x in (google, fr) if x]
     return min(options, key=lambda x: x["price"]) if options else None
+
+
+def _hm(value) -> tuple[int, int]:
+    """Время из ответа Google: [8] = 08:00, [None, 31] = 00:31."""
+    v = [*(value or []), None, None]
+    return v[0] or 0, v[1] or 0
+
+
+def oneway_options(origin: str, dest: str, day: dt.date, party: dict, cfg: dict, max_stops: int = 0) -> list[dict]:
+    """Все рейсы в одну сторону из выдачи Google с временем вылета/прилёта. Цена — на всю группу."""
+    import json
+
+    from fast_flights import FlightQuery, Passengers, create_query
+    from selectolax.lexbor import LexborHTMLParser
+
+    query = create_query(
+        flights=[FlightQuery(date=day.isoformat(), from_airport=origin, to_airport=dest)],
+        trip="one-way",
+        passengers=Passengers(adults=party["adults"], children=len(party.get("children", []))),
+        currency=cfg["trip"]["currency"], language="en-GB", max_stops=max_stops,
+    )
+    script = LexborHTMLParser(fetch_html(query)).css_first(r"script.ds\:1")
+    if script is None:
+        raise RuntimeError("Google не отдал страницу с рейсами")
+    data = script.text().split("data:", 1)[1].rsplit(",", 1)[0]
+    if data.endswith("errorHasStatus: true"):
+        return []
+    payload = json.loads(data)
+    out = []
+    for block in (payload[2], payload[3]):
+        for k in (block or [None])[0] or []:
+            try:
+                price, f = k[1][0][1], k[0]
+                first, last = f[2][0], f[2][-1]
+                dep = dt.datetime(*first[20], *_hm(first[8]))
+                arr = dt.datetime(*last[21], *_hm(last[10]))
+            except (IndexError, TypeError, ValueError):
+                continue
+            if price:
+                out.append({"from": origin, "to": dest, "dep": dep, "arr": arr, "price": float(price),
+                            "airline": ", ".join(f[1] or [])})
+    return out

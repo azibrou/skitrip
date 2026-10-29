@@ -25,6 +25,7 @@ flights:
 self_transfer:                # два отдельных билета Ryanair через хаб, с повторной регистрацией
   enabled: true
   min_connection_h: 3         # запас между рейсами
+  hubs: [WAW]                 # хабы для 2 отдельных билетов любых авиакомпаний (Google + Ryanair): город → хаб → прямой рейс
 
 lodging:
   source: airbnb
