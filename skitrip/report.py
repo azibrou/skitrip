@@ -203,7 +203,7 @@ table.heat{border-collapse:separate;border-spacing:2px;font-size:12px;table-layo
 @media (max-width:600px){.heat td{font-size:0}.heat td{height:30px}}
 /* reference table: book rules */
 table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-top:2px solid var(--rule);border-bottom:2px solid var(--rule)}
-.ref thead tr{border-bottom:1px solid var(--rule)}
+.ref thead th{position:sticky;top:0;z-index:1;background:var(--bg);box-shadow:inset 0 -1px var(--rule)}
 .ref td,.ref th{text-align:left;padding:8px 12px 8px 0;vertical-align:top}
 .ref .num{text-align:right}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
