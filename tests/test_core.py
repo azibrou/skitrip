@@ -160,3 +160,31 @@ def test_two_families_lodging_and_passes():
     assert one["lodging_price"] == 950 and "Google" in one["lodging_kind"]
     assert two["lodging_price"] == 1700 and "на всех" in two["lodging_kind"]      # < 2×950, < 2×1000
     assert two["air"]["price"] == 1200 and two["passes"].total == 2 * one["passes"].total
+
+
+def test_adult_only_scenarios():
+    cfg = load_config()
+    R = {r["id"]: r for r in load_resorts()}
+    sc = {s["key"]: s for s in plan.scenarios(cfg)}
+    assert sc["a1"]["party"]["children"] == [] and sc["a1"]["pass_party"]["adults"] == 1
+    wk = dt.date(2027, 1, 16)
+    fl = {("SZG", str(wk)): [{"price": 300, "origin": "TLL", "url": "x"}]}
+    rows = [{"kind": "ghotel", "guests": "2+0", "p25": 700, "min": 600, "n": 9, "top": [], "search_url": "x"}]
+    [a1] = plan.build(cfg, [R["kaprun"]], [wk], fl, {("kaprun", str(wk)): rows}, {}, scenario=sc["a1"])
+    [a2] = plan.build(cfg, [R["kaprun"]], [wk], fl, {("kaprun", str(wk)): rows}, {}, scenario=sc["a2"])
+    assert a1["air"]["price"] == 100 and a2["air"]["price"] == 200
+    assert a1["lodging_price"] == a2["lodging_price"] == 700
+    assert a2["passes"].total == 2 * a1["passes"].total
+    assert "megeve" in R
+
+
+def test_closed_season_has_no_total():
+    cfg = load_config()
+    R = {r["id"]: r for r in load_resorts()}
+    wk = dt.date(2026, 12, 5)
+    fl = {("GVA", str(wk)): [{"price": 300, "origin": "TLL", "url": "x"}]}
+    rows = [{"kind": "ghotel", "guests": "2+0", "p25": 700, "min": 600, "n": 9, "top": [], "search_url": "x"}]
+    [o] = plan.build(cfg, [R["megeve"]], [wk], fl, {("megeve", str(wk)): rows}, {})
+    assert o["total"] is None and "закрыт" in o["missing"][0]
+    [b] = plan.build(cfg, [R["laplagne@aime"]], [wk], fl, {("laplagne@aime", str(wk)): rows}, {})
+    assert b["total"] is None

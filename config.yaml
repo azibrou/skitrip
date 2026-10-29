@@ -27,7 +27,11 @@ self_transfer:                # два отдельных билета Ryanair �
   min_connection_h: 3         # запас между рейсами
   hubs: [WAW]                 # хабы для 2 отдельных билетов любых авиакомпаний (Google + Ryanair): город → хаб → прямой рейс
 
-scenarios: [1, 2]             # переключатель в отчёте: 1 семья (2+1) или 2 одинаковые семьи (4+2)
+scenarios:                    # переключатель в отчёте
+  - {key: f1, label: "1 семья (2+1)", families: 1}
+  - {key: f2, label: "2 семьи (4+2)", families: 2}
+  - {key: a2, label: "2 взрослых", adults: 2, children: 0}
+  - {key: a1, label: "1 взрослый", adults: 1, children: 0}
 
 lodging:
   source: airbnb

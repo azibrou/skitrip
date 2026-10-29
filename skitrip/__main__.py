@@ -148,7 +148,7 @@ def cmd_run(args, cfg):
 
     if not args.skip_lodging:
         from . import lodging
-        big = plan.scaled_party(party, max(cfg.get("scenarios") or [1]))
+        big = max((s["party"] for s in plan.scenarios(cfg)), key=lambda x: x["adults"] + len(x["children"]))
         # тип жилья → (как искать, состав гостей)
         kinds = {
             "entire": (lambda r, w: lodging.fetch(r, w, nights, party, cfg), plan.gkey(party)),
@@ -187,7 +187,7 @@ def cmd_report(args, cfg, demo_data=None):
     else:
         st = Store(DB)
         flights, lodging, snow = st.latest_flights(), st.latest_lodging(), st.latest_snow()
-    scen = {f: plan.build(cfg, resorts, weeks, flights, lodging, snow, families=f) for f in cfg.get("scenarios") or [1]}
+    scen = {s["key"]: plan.build(cfg, resorts, weeks, flights, lodging, snow, scenario=s) for s in plan.scenarios(cfg)}
     opts = next(iter(scen.values()))
     OUT.parent.mkdir(exist_ok=True)
     out = OUT.with_name("report-demo.html") if demo_data else OUT

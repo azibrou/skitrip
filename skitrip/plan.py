@@ -21,6 +21,33 @@ def scaled_party(party: dict, families: int) -> dict:
     return {**party, "adults": party["adults"] * families, "children": list(party.get("children", [])) * families}
 
 
+def scenarios(cfg: dict) -> list[dict]:
+    """Составы группы для переключателя в отчёте.
+
+    families: N — N одинаковых семей из party; adults/children — отдельный состав (дети берутся из party).
+    """
+    out = []
+    for sc in cfg.get("scenarios") or [1]:
+        if not isinstance(sc, dict):
+            sc = {"families": sc}
+        if "adults" in sc:
+            party = {**cfg["party"], "adults": sc["adults"], "children": list(cfg["party"].get("children", []))[: sc.get("children", 0)]}
+            pp = {**party, "children": party["children"] if cfg["trip"].get("pass_children", True) else []}
+            units = 1
+            key = sc.get("key") or f"a{sc['adults']}c{len(party['children'])}"
+            label = sc.get("label") or f"{sc['adults']} взр."
+        else:
+            f = sc["families"]
+            party, pp, units = scaled_party(cfg["party"], f), scaled_party(pass_party(cfg), f), f
+            key = sc.get("key") or f"f{f}"
+            label = sc.get("label") or ("1 семья" if f == 1 else f"{f} семьи")
+        base = cfg["party"]["adults"] + len(cfg["party"].get("children", []))
+        seats = party["adults"] + len(party["children"])
+        out.append({"key": key, "label": label, "party": party, "pass_party": pp, "units": units,
+                    "seats": seats, "air_ratio": seats / base})
+    return out
+
+
 def gkey(party: dict) -> str:
     return f"{party['adults']}+{len(party.get('children', []))}"
 
@@ -49,8 +76,9 @@ def lodging_choice(rows, cfg: dict, families: int):
 
 
 def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, lodging: dict, snow: dict,
-          families: int = 1) -> list[dict]:
-    party = scaled_party(cfg["party"], families)
+          families: int = 1, scenario: dict | None = None) -> list[dict]:
+    sc = scenario or scenarios({**cfg, "scenarios": [families]})[0]
+    party, families, ratio = sc["party"], sc["units"], sc["air_ratio"]
     nights = cfg["trip"]["nights"]
     stat = cfg["lodging"]["stat"]
     n_people = party["adults"] + len(party.get("children", []))
@@ -60,7 +88,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
     for r in resorts:
         for wk in weeks:
             first_ski = wk + dt.timedelta(days=1)
-            passes = party_pass_cost(r, scaled_party(pass_party(cfg), families), first_ski)
+            passes = party_pass_cost(r, sc["pass_party"], first_ski)
 
             best_air = None
             for code, km in r["airports"].items():
@@ -71,16 +99,20 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
                     origin = f.get("origin") or cfg["trip"]["origin"]
                     if origin not in orig:
                         continue
-                    # цена в базе — на одну семью; для нескольких семей умножаем (оценка)
-                    cost = f["price"] * families + orig[origin] + transfer_cost(km, cfg)
+                    # цена в базе — на одну семью (2+1); для другого состава пересчёт по местам (оценка)
+                    price = round(f["price"] * ratio, 2)
+                    cost = price + orig[origin] + transfer_cost(km, cfg)
                     if best_air is None or cost < best_air["air_and_car"]:
-                        best_air = {**f, "price": f["price"] * families, "per_family": f["price"], "origin": origin, "ground": orig[origin], "airport": code, "km": km,
+                        best_air = {**f, "price": price, "ratio": ratio, "per_family": f["price"], "origin": origin, "ground": orig[origin], "airport": code, "km": km,
                                     "hours": round(km / 70, 1), "transfer": transfer_cost(km, cfg),
                                     "air_and_car": round(cost, 2)}
 
             lodging_price, lg, lodging_kind = lodging_choice(lodging.get((r["id"], str(wk))), cfg, families)
 
             missing = []
+            season = r.get("season") or {}
+            if season_closed(r, first_ski, cfg):
+                missing.append(f"курорт закрыт (сезон {season['from']:%d.%m}–{season['to']:%d.%m})")
             if best_air is None:
                 missing.append("перелёт")
             if lodging_price is None:
@@ -90,7 +122,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
                 total = round(best_air["air_and_car"] + lodging_price + passes.total + bags, 2)
             # Без перелёта: жильё + пассы + машина от ближайшего аэропорта — чтобы сравнивать хоть что-то.
             ground = None
-            if lodging_price is not None:
+            if lodging_price is not None and not season_closed(r, first_ski, cfg):
                 km = min(r["airports"].values())
                 ground = round(lodging_price + passes.total + transfer_cost(km, cfg), 2)
 
@@ -99,9 +131,15 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
                 "passes": passes, "air": best_air, "lodging": lg, "lodging_price": lodging_price,
                 "bags": bags, "total": total, "ground": ground, "missing": missing, "snow": snow.get(r.get("base_of", r["id"])),
                 "few_lodging": bool(lg) and lg["n"] < cfg["lodging"]["min_results"],
-                "lodging_kind": lodging_kind, "families": families,
+                "lodging_kind": lodging_kind, "families": families, "scenario": sc["key"],
             })
     return options
+
+
+def season_closed(r: dict, first_ski: dt.date, cfg: dict) -> bool:
+    s = r.get("season")
+    last = first_ski + dt.timedelta(days=cfg["trip"]["ski_days"] - 1)
+    return bool(s) and (first_ski < s["from"] or last > s["to"])
 
 
 def has_flights(options: list[dict]) -> bool:

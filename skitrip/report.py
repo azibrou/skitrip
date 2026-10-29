@@ -5,7 +5,7 @@ import datetime as dt
 import html
 
 from .passes import age_on
-from .plan import origins, scaled_party, transfer_cost, has_flights, ranked, score
+from .plan import origins, scenarios, transfer_cost, has_flights, ranked, score
 
 STATUS = {
     "verified_2026_27": ("цены 26/27", "ok"),
@@ -53,8 +53,8 @@ def air_rows(a, r, cfg) -> str:
             else f'<dt>Дорога</dt><dd class="mut">от {e(code)}, {km} км — не в сумме</dd>'))
 
 
-def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list[dict], families: int, demo: bool) -> str:
-    party = scaled_party(cfg["party"], families)
+def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list[dict], sc: dict, demo: bool) -> str:
+    party = sc["party"]
     kids = party.get("children", [])
     by = {(o["resort"]["id"], o["week"]): o for o in options}
     full = has_flights(options)
@@ -92,7 +92,7 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
   <p class="sub">{dshort(o['week'])} – {dshort(o['check_out'])} · {f"вылет {e(a['airport'])}, {a['hours']} ч до курорта" if a else "без перелёта"}</p></div>
   <div class="tot">{eur(score(o, full))}</div></header>
   <dl>
-    {air_rows(a, r, cfg)}{f'<dt></dt><dd class="mut">перелёт: цена на одну семью × {families} — оценка</dd>' if a and families > 1 else ""}
+    {air_rows(a, r, cfg)}{f'<dt></dt><dd class="mut">перелёт: цена за 3 места пересчитана на {sc["seats"]} — оценка</dd>' if a and a.get("ratio", 1) != 1 else ""}
     <dt>Жильё, {cfg['trip']['nights']} ночей</dt><dd><a href="{e(lg['search_url'])}">{eur(o['lodging_price'])}</a> <span class="mut">{e(o['lodging_kind'])}; {cfg['lodging']['stat']} из {lg['n']}, мин. {eur(lg['min'])}</span></dd>
     <dt>Ски-пассы, {p.period}</dt><dd>{eur(p.total)} <span class="mut">{e('; '.join(p.lines))}</span></dd>
     {f"<dt>Ски-багаж</dt><dd>{eur(o['bags'])}</dd>" if o['bags'] else ''}
@@ -123,7 +123,8 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
     nofly = "" if full or not totals else '<p class="demo">Перелётов в базе нет — суммы БЕЗ перелёта: жильё + ски-пассы + машина от ближайшего аэропорта.</p>'
     banner = nofly + '<p class="demo">ДЕМО: перелёты и жильё — синтетические цифры, чтобы показать вид отчёта. Ски-пассы — реальные данные из resorts.yaml.</p>' if demo else ""
 
-    return f"""<p class="sub">{party['adults']} взрослых + {kid_txt} · вылет из {', '.join(origins(cfg))} · {cfg['trip']['nights']} ночей, ски-пасс {cfg['trip']['ski_days']} дней · заполнено {filled} из {len(options)} вариантов · собрано {dt.datetime.now():%d.%m.%Y %H:%M}</p>
+    who = f"{party['adults']} взр." + (f" + {kid_txt}" if kid_txt else "")
+    return f"""<p class="sub">{who} · вылет из {', '.join(origins(cfg))} · {cfg['trip']['nights']} ночей, ски-пасс {cfg['trip']['ski_days']} дней · заполнено {filled} из {len(options)} вариантов · собрано {dt.datetime.now():%d.%m.%Y %H:%M}</p>
 {banner}
 <h2>Курорт × неделя заезда, тыс. €</h2>
 <div class="scroll"><table class="heat"><thead><tr><th></th>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table></div>
@@ -137,15 +138,15 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
 
 
 def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options, demo: bool = False) -> str:
-    """options — список вариантов или {число семей: список вариантов} для переключателя."""
-    scen = options if isinstance(options, dict) else {1: options}
-    label = lambda f: "1 семья" if f == 1 else f"{f} семьи"
+    """options — список вариантов или {ключ сценария: список вариантов} для переключателя."""
+    specs = {s["key"]: s for s in scenarios(cfg)}
+    scen = options if isinstance(options, dict) else {next(iter(specs)): options}
     sections = "".join(
-        f'<section class="scen" data-f="{f}"{"" if i == 0 else " hidden"}>{_section(cfg, resorts, weeks, opts, f, demo)}</section>'
-        for i, (f, opts) in enumerate(scen.items()))
+        f'<section class="scen" data-f="{k}"{"" if i == 0 else " hidden"}>{_section(cfg, resorts, weeks, opts, specs[k], demo)}</section>'
+        for i, (k, opts) in enumerate(scen.items()))
     toggle = "" if len(scen) < 2 else '<div class="tog" role="tablist">' + "".join(
-        f'<button role="tab" data-f="{f}" aria-selected="{str(i == 0).lower()}">{label(f)}</button>'
-        for i, f in enumerate(scen)) + "</div>"
+        f'<button role="tab" data-f="{k}" aria-selected="{str(i == 0).lower()}">{e(specs[k]["label"])}</button>'
+        for i, k in enumerate(scen)) + "</div>"
     return f"""<!doctype html><html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Ski Trip Cost</title>
 <style>
@@ -168,7 +169,7 @@ dl{{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:12px 0 0;fon
 table.ref{{border-collapse:collapse;width:100%;font-size:13px;background:var(--card)}}.ref td,.ref th{{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}}
 .pill{{font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid currentColor}}.pill.ok{{color:var(--ok)}}.pill.warn{{color:var(--warn)}}
 
-.tog{{display:inline-flex;gap:4px;padding:4px;margin:12px 0 4px;background:var(--card);border:1px solid var(--line);border-radius:10px}}
+.tog{{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;margin:12px 0 4px;background:var(--card);border:1px solid var(--line);border-radius:10px}}
 .tog button{{font:inherit;border:0;background:none;color:var(--fg);padding:6px 14px;border-radius:7px;cursor:pointer}}
 .tog button[aria-selected=true]{{background:var(--acc);color:#fff}}
 </style></head><body><main>
@@ -180,7 +181,7 @@ table.ref{{border-collapse:collapse;width:100%;font-size:13px;background:var(--c
 document.querySelectorAll('.tog button').forEach(b => b.onclick = () => {{
   document.querySelectorAll('.tog button').forEach(x => x.setAttribute('aria-selected', x === b));
   document.querySelectorAll('.scen').forEach(s => s.hidden = s.dataset.f !== b.dataset.f);
-  try {{ localStorage.setItem('families', b.dataset.f); }} catch (e) {{}}
+  try {{ localStorage.setItem('scenario', b.dataset.f); }} catch (e) {{}}
 }});
-try {{ const f = localStorage.getItem('families'); const b = f && document.querySelector('.tog button[data-f="' + f + '"]'); if (b) b.click(); }} catch (e) {{}}
+try {{ const f = localStorage.getItem('scenario'); const b = f && document.querySelector('.tog button[data-f="' + f + '"]'); if (b) b.click(); }} catch (e) {{}}
 </script></body></html>"""
