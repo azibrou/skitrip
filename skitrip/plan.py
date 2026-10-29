@@ -119,10 +119,12 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
                 exact = {(q.get("origin"), q.get("source") or "google") for q in quotes if (q.get("pax") or base_pax) == own_pax}
                 for f in quotes:
                     is_exact = (f.get("pax") or base_pax) == own_pax
-                    if not is_exact and not ((f.get("pax") or base_pax) == base_pax
-                                             and (f.get("origin"), f.get("source") or "google") not in exact):
+                    is_base = (f.get("pax") or base_pax) == base_pax
+                    # несколько семей: каждая бронирует свои 2+1 — это точная цена, не оценка
+                    per_family = families > 1 and is_base
+                    if not (is_exact or per_family or (is_base and (f.get("origin"), f.get("source") or "google") not in exact)):
                         continue
-                    k = 1 if is_exact else ratio
+                    k = 1 if is_exact else (families if per_family else ratio)
                     if f.get("price") is None:
                         continue
                     origin = f.get("origin") or cfg["trip"]["origin"]
@@ -132,7 +134,8 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
                     price = round(f["price"] * k, 2)
                     cost = price + orig[origin] + transfer_cost(km, cfg)
                     if best_air is None or cost < best_air["air_and_car"]:
-                        best_air = {**f, "price": price, "ratio": k, "estimate": not is_exact, "per_family": f["price"], "origin": origin, "ground": orig[origin], "airport": code, "km": km,
+                        best_air = {**f, "price": price, "ratio": k, "estimate": not (is_exact or per_family),
+                                    "bookings": families if per_family and not is_exact else 1, "per_family": f["price"], "origin": origin, "ground": orig[origin], "airport": code, "km": km,
                                     "hours": round(km / 70, 1), "transfer": transfer_cost(km, cfg),
                                     "air_and_car": round(cost, 2)}
 

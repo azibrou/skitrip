@@ -61,6 +61,41 @@ def flights_done(st, party) -> set:
             for rows in st.latest_flights().values() for x in rows if x["scanned_at"] >= today}
 
 
+def skip_dead_routes(st, jobs, weeks, party, cfg, flights) -> list:
+    """Направления, где ни разу не нашлось рейса, не сканируем целиком.
+
+    Раз в flights.recheck_days дней по такому направлению делается один пробный поиск
+    (середина сезона); если рейс появился — направление снова сканируется полностью.
+    """
+    fc = cfg["flights"]
+    min_rows, recheck = fc.get("dead_min_searches", 10), fc.get("recheck_days", 7)
+    stats = st.route_stats()
+    probe_week = weeks[len(weeks) // 2]
+    dead = set()
+    for o, a in sorted({(j[1], j[2]) for j in jobs}):
+        n, found, last = stats.get((o, a), (0, 0, None))
+        if n < min_rows or found:
+            continue
+        age = (dt.datetime.now() - dt.datetime.fromisoformat(last)).days if last else 999
+        if age >= recheck:  # пора проверить, не появились ли рейсы
+            ret = probe_week + dt.timedelta(days=cfg["trip"]["nights"])
+            try:
+                q = flights.fetch_best(o, a, probe_week, ret, party, cfg)
+            except Exception as ex:
+                print(f"проверка {o}⇄{a}: ошибка {ex}", file=sys.stderr)
+                q = None
+            st.add_flight(o, a, probe_week, ret, q, pax=plan.gkey(party))
+            _sleep(fc["delay_s"])
+            if q:
+                print(f"{o}⇄{a}: появились рейсы ({q['price']:.0f} €) — сканирую полностью")
+                continue
+        dead.add((o, a))
+    if dead:
+        print(f"Без рейсов, пропускаю (проверка раз в {recheck} дн.): "
+              + ", ".join(f"{o}⇄{a}" for o, a in sorted(dead)))
+    return [j for j in jobs if (j[1], j[2]) not in dead]
+
+
 def cmd_run(args, cfg):
     resorts, weeks = select(args, cfg)
     st = Store(DB)
@@ -69,7 +104,9 @@ def cmd_run(args, cfg):
     groups = {plan.gkey(s["party"]): s for s in plan.scenarios(cfg)}
     if args.pax:
         groups = {k: v for k, v in groups.items() if k in args.pax}
-    fly = {k: s["party"] for k, s in groups.items()}
+    # перелёты — только на одну семью/группу: несколько семей бронируют каждая свои 2+1
+    # (Google на 5+ пассажиров в одном заказе часто не находит ничего)
+    fly = {k: s["party"] for k, s in groups.items() if s["units"] == 1}
     stay = {k: s["party"] for k, s in groups.items() if s["units"] == 1}  # жильё на одну группу
 
     if not args.skip_snow:
@@ -87,6 +124,8 @@ def cmd_run(args, cfg):
         airports = sorted({a for r in resorts for a in r["airports"]})
         origins = args.origins or list(plan.origins(cfg))
         jobs = [(g, o, a, w) for g in fly for o in origins for w in weeks for a in airports]
+        if not args.all_airports:
+            jobs = skip_dead_routes(st, jobs, weeks, party, cfg, flights)
         if args.skip_done:  # уже собранное сегодня не повторяем
             fd = flights_done(st, party)
             jobs = [j for j in jobs if (j[1], j[2], str(j[3]), j[0], "google") not in fd]
@@ -277,6 +316,7 @@ def main(argv=None):
             p.add_argument("--origins", nargs="*", help="города вылета, по умолчанию все из config.yaml")
             p.add_argument("--lodging-kinds", nargs="*", choices=["entire", "entire-big", "hotel", "ghotel"],
                            help="типы жилья, по умолчанию lodging.kinds из config.yaml")
+            p.add_argument("--all-airports", action="store_true", help="сканировать и направления без рейсов")
             p.add_argument("--pax", nargs="*", help="составы групп, напр. 2+0 1+0; по умолчанию все из scenarios")
             p.add_argument("--skip-done", action="store_true", help="не повторять то, что уже собрано сегодня")
     args = ap.parse_args(argv)
