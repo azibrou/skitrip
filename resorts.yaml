@@ -1,4 +1,4 @@
-# Ледниковые курорты IT / FR / AT + Zermatt (CH). bases — соседние посёлки для жилья с тем же пассом.
+# Ледниковые курорты IT / FR / AT. bases — соседние посёлки для жилья с тем же пассом.
 #
 # lift_pass — цена ски-пасса на `days` дней, по периодам сезона.
 #   periods: первый период, в который попадает дата первого ски-дня; иначе default.
@@ -426,25 +426,3 @@ resorts:
       child_tiers:
         - {max_age: 8, price: child, note: "Bambini 0–8: 158 €"}
         - {max_age: 18, price: 221, note: "Junior 9–18"}
-
-  - id: zermatt
-    name: Zermatt
-    hotel_query: "Zermatt"
-    country: CH
-    top_m: 3883
-    glacier: Theodulgletscher / Klein Matterhorn
-    coords: [45.9380, 7.7300]
-    lodging_bbox: [46.00, 7.73, 46.04, 7.77]     # Zermatt (без машин)
-    airports: {MXP: 200, GVA: 240, ZRH: 240, BSL: 260}
-    bases:
-      - {id: taesch, name: "Täsch", lodging_bbox: [46.05, 7.76, 46.08, 7.79], km: 6, note: "then shuttle train; car stays in Täsch"}
-    lift_pass:
-      pass_name: Matterhorn ski paradise (Swiss side)
-      days: 6
-      status: estimate
-      source: https://www.schneehoehen.de/skigebiete/preise/zermatt
-      periods: []
-      default: {name: "from CHF 376 (25/26) +3% ≈ €415; dynamic pricing", adult: 415.00, child: 208.00}
-      child_tiers:
-        - {max_age: 8, price: 0, note: "under 9 free (Wolli-Card)"}
-        - {max_age: 15, price: child, note: "9–15 — estimated 50%"}
