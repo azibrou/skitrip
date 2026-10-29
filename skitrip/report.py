@@ -226,7 +226,7 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font
 @media (max-width:420px){dl{grid-template-columns:1fr}dt{margin-top:6px}}
 /* hover: the row and column under the pointer stay bright, the rest dims a little */
 .heat td{transition:opacity .15s}
-.heat.hov td{opacity:.42}.heat.hov td.on{opacity:1}
+.heat.hov td{opacity:.62}.heat.hov td.on{opacity:1}
 .heat th.on{font-weight:600}
 @media (hover:none){.heat.hov td{opacity:1}}
 /* heatmap load: tiles appear in price order — greens first, reds last */
