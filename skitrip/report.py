@@ -225,10 +225,11 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font
 @media (max-width:700px){.cards{grid-template-columns:1fr}}
 @media (max-width:420px){dl{grid-template-columns:1fr}dt{margin-top:6px}}
 /* hover: the row and column under the pointer stay bright, the rest dims a little */
-.heat td{transition:opacity .15s}
-.heat.hov td{opacity:.62}.heat.hov td.on{opacity:1}
+.heat td{transition:box-shadow .15s}
+/* inset shadow sits above the tile colour but under the text: colour fades, numbers stay full */
+.heat.hov td:not(.on){box-shadow:inset 0 0 0 999px color-mix(in srgb,var(--bg) 40%,transparent)}
 .heat th.on{font-weight:600}
-@media (hover:none){.heat.hov td{opacity:1}}
+@media (hover:none){.heat.hov td:not(.on){box-shadow:none}}
 /* heatmap load: tiles appear in price order — greens first, reds last */
 .heat td{animation:cheap .26s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
 @keyframes cheap{from{background-color:var(--card);color:transparent;transform:scale(.6)}to{transform:none}}
