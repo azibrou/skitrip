@@ -186,6 +186,7 @@ h3{font-size:17px;font-weight:600;margin:0}
 a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
 :focus-visible{outline:2px solid var(--rule);outline-offset:2px}
 p{margin:0}.meta{margin:14px 0 0}.cap{margin:12px 0 0;font-size:14px}.note{margin:12px 0 0}
+.lede{font-size:17px;margin:4px 0 0}
 .top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:baseline;justify-content:space-between}
 .bar{margin:18px 0 0;display:flex;flex-wrap:wrap;gap:8px 48px}
 .tog{display:flex;flex-wrap:wrap;gap:4px 20px}
@@ -291,12 +292,12 @@ def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options, demo: 
     toggle = (group("Group", "s", skeys, lambda k: specs[k]["label"])
               + group("Fly from", "o", okeys, lambda k: either if k == "any" else f"from {CITY.get(k, k)}"))
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Ski Week Cost</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Ski Trip Cost</title>
 <script>{THEME_BOOT}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,600;1,14..32,400&display=swap" rel="stylesheet">
 <style>{CSS}</style></head><body><main>
-<div class="top"><h1>Ski week: the full cost</h1>
+<div class="top"><div><h1>Ski trip: full cost</h1><p class="lede">Austria, Italy, France</p></div>
 <button class="theme" role="switch" aria-checked="false" aria-label="Dark theme"><span class="sw"></span><i>dark</i></button></div>
 <div class="bar">{toggle}</div>
 {sections}
