@@ -79,7 +79,7 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
     full = has_flights(options)
     totals = [score(o, full) for o in options if score(o, full) is not None]
     lo, hi = (min(totals), max(totals)) if totals else (0, 0)
-    top = ranked(options)[:15]
+    top = ranked(options)[:10]
 
     head = "".join(f"<th>{dshort(w)}</th>" for w in weeks)
     # при появлении клетки проявляются по цене: сначала дешёвые, дорогие последними
@@ -214,13 +214,14 @@ table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-
 .ref td,.ref th{text-align:left;padding:8px 12px 8px 0;vertical-align:top}
 .ref .num{text-align:right}
 .ref tbody tr+tr td{border-top:1px solid var(--hair)}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .card{background:var(--card);border-radius:10px;padding:16px}
 .card header{display:flex;gap:10px;align-items:flex-start}.card header>div{flex:1}.card header p{font-size:14px}
 .tot{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
 dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font-size:14px}dt{font-style:italic}dd{margin:0}
 .lodg{margin:10px 0 0;padding-left:18px;font-size:14px}.warn{margin:10px 0 0;font-size:14px}
-@media (max-width:420px){.cards{grid-template-columns:1fr}dl{grid-template-columns:1fr}dt{margin-top:6px}}
+@media (max-width:700px){.cards{grid-template-columns:1fr}}
+@media (max-width:420px){dl{grid-template-columns:1fr}dt{margin-top:6px}}
 /* heatmap load: tiles appear in price order — greens first, reds last */
 .heat td{animation:cheap .26s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
 @keyframes cheap{from{background-color:var(--card);color:transparent;transform:scale(.6)}to{transform:none}}
