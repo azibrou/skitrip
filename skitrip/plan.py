@@ -65,6 +65,8 @@ def lodging_choice(rows, cfg: dict, families: int, party: dict | None = None):
     gf = gkey(scaled_party(cfg["party"], families)) if families > 1 else own
     rows = [rows] if isinstance(rows, dict) else (rows or [])
     many = f" × {families}" if families > 1 else ""
+    kinds = set(cfg["lodging"].get("kinds") or ["entire"]) | {"entire"}
+    rows = [r for r in rows if (r.get("kind") or "entire") in kinds]  # выключенные в config типы не учитываем
     have = {(r.get("kind") or "entire", r.get("guests") or g1) for r in rows if r.get(stat) is not None}
     cands = []
     for row in rows:

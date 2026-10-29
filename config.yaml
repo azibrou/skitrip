@@ -37,7 +37,7 @@ scenarios:                    # переключатель в отчёте
 
 lodging:
   source: airbnb
-  kinds: [entire, entire-big, hotel, ghotel]   # квартиры 2+1; квартиры на 2 семьи (≥2 спальни); отели Airbnb; Google Hotels
+  kinds: [entire, entire-big, ghotel]   # квартиры Airbnb; квартиры на 2 семьи (≥2 спальни); Google Hotels (Booking и др.). Отели Airbnb (hotel) убраны: почти пусто и вдвое дороже
   place_type: "Entire home/apt"
   min_bedrooms: 1
   stat: p25                   # чем считать цену жилья: p25 | median | min
