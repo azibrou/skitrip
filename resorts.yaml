@@ -1,4 +1,4 @@
-# Ледниковые курорты IT / FR / AT (Passo Tonale исключён).
+# Ледниковые курорты IT / FR / AT.
 #
 # lift_pass — цена ски-пасса на `days` дней, по периодам сезона.
 #   periods: первый период, в который попадает дата первого ски-дня; иначе default.
@@ -349,3 +349,22 @@ resorts:
       child_tiers:
         - {max_age: 4, price: 0}
         - {max_age: 13, price: child}
+
+  - id: tonale
+    name: Passo Tonale – Presena
+    country: IT
+    top_m: 3069
+    glacier: Ghiacciaio Presena
+    coords: [46.2590, 10.5810]
+    lodging_bbox: [46.23, 10.48, 46.31, 10.72]   # Passo Tonale, Ponte di Legno, Vermiglio
+    airports: {BGY: 150, VRN: 175, LIN: 185, INN: 220, MXP: 230, TSF: 260, VCE: 290, MUC: 340}
+    lift_pass:
+      pass_name: Pontedilegno-Tonale (Adamello Ski)
+      days: 6
+      status: from_2025_26
+      source: https://www.onthesnow.co.uk/trentino/pontedilegno-tonale-adamello-ski/skipass
+      periods: []
+      default: {name: "высокий сезон (цены 25/26)", adult: 315.00, child: 158.00}
+      child_tiers:
+        - {max_age: 8, price: child, note: "Bambini 0–8: 158 €"}
+        - {max_age: 18, price: 221, note: "Junior 9–18"}
