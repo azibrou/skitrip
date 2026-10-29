@@ -163,7 +163,7 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
 {banner}
 <h2>Resort × check-in week <i>thousand €</i></h2>
 <table class="heat"><colgroup><col class="cn">{'<col>' * len(weeks)}</colgroup><thead><tr><th></th>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table>
-<p class="cap">Total = flights for everyone{' + car and fuel' if car else ' (car and driving not included)'} from the best airport + cheapest lodging ({cfg['lodging']['stat']} of Airbnb homes, Airbnb hotels and Google Hotels) + lift passes for adults. Grey cells: missing flight or lodging price, or the resort is closed.</p>
+<p class="cap">Total = flights for everyone{' + car and fuel' if car else ' (car and driving not included)'} from the best airport + cheapest lodging ({cfg['lodging']['stat']} of Airbnb homes and Google Hotels, which includes Booking) + lift passes for adults. Grey cells: missing flight or lodging price, or the resort is closed.</p>
 <h2>Top {len(top)}</h2>
 <div class="cards">{''.join(cards) or '<p><i>No complete option yet — run a scan.</i></p>'}</div>
 <h2>Resorts and lift passes</h2>
@@ -198,16 +198,20 @@ p{margin:0}.meta{margin:14px 0 0}.cap{margin:12px 0 0;font-size:14px}.note{margi
 table{width:100%;font-variant-numeric:tabular-nums lining-nums}
 thead th{font-weight:600}
 /* heatmap: no frame, no rules — just tiles; always fits the page width */
-table.heat{border-collapse:separate;border-spacing:2px;font-size:12px;table-layout:fixed}
+table.heat{border-collapse:separate;border-spacing:2px;font-size:12px;table-layout:fixed;border-bottom:2px solid var(--rule)}
 .heat col.cn{width:200px}
 @media (max-width:900px){.heat col.cn{width:120px}}
 @media (max-width:600px){.heat col.cn{width:96px}}
 .heat th,.heat td{padding:3px 2px;text-align:center;font-weight:400}
-.heat thead th{position:sticky;top:0;z-index:1;background:var(--bg);padding:8px 0 6px;font-weight:600;white-space:nowrap;overflow:hidden}
+.heat thead th{position:sticky;top:0;z-index:1;background:var(--bg);padding:8px 0 6px;font-weight:600;white-space:nowrap}
+/* rule under the dates; reaches across the 2px gaps between cells and sticks with the header */
+.heat thead th::after{content:"";position:absolute;left:-2px;right:-2px;bottom:-2px;height:1px;background:var(--rule)}
+.heat thead th:first-child::after{left:0}
 .heat td{height:38px;border-radius:3px;overflow:hidden}
-.heat th.rn{text-align:left;padding:3px 10px 3px 0;line-height:1.25;overflow-wrap:anywhere}
+.heat th.rn{text-align:left;padding:3px 10px 3px 8px;line-height:1.25;overflow-wrap:anywhere}
 .heat .via{display:block;font-style:italic}
-@media (max-width:1024px){.heat thead th{writing-mode:vertical-rl;transform:rotate(180deg);height:52px;padding:4px 0;vertical-align:bottom}}
+@media (max-width:1024px){.heat thead th{writing-mode:vertical-rl;transform:rotate(180deg);height:52px;padding:4px 0;vertical-align:bottom}
+  .heat thead th::after{bottom:auto;top:-2px;left:-2px;right:-2px;width:auto;height:1px}}
 @media (max-width:900px){.heat{font-size:10px;border-spacing:1px}.heat thead th{font-size:9px;height:46px}}
 @media (max-width:600px){.heat td{font-size:0}.heat td{height:30px}}
 /* reference table: book rules */
