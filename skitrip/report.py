@@ -82,6 +82,10 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
     top = ranked(options)[:15]
 
     head = "".join(f"<th>{dshort(w)}</th>" for w in weeks)
+    # волна при появлении расходится от самой дешёвой клетки
+    best = min(((score(by[(r["id"], w)], full), ri, wi) for ri, r in enumerate(resorts) for wi, w in enumerate(weeks)
+                if (r["id"], w) in by and score(by[(r["id"], w)], full) is not None), default=(None, 0, 0))
+    r0, c0 = best[1], best[2]
     rows = []
     for ri, r in enumerate(resorts):
         cells = []
@@ -90,7 +94,9 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
             v = score(o, full) if o else None
             tip = eur(v) if v is not None else ("no data: " + ", ".join(o["missing"]) if o else "—")
             label = "" if v is None else f"{v/1000:.1f}"
-            cells.append(f'<td style="background:{heat_color(v, lo, hi)};--d:{(ri + wi) * 14}ms" '
+            d = round(((ri - r0) ** 2 + (wi - c0) ** 2) ** 0.5 * 32)
+            cls = ' class="best"' if (ri, wi) == (r0, c0) and v is not None else ""
+            cells.append(f'<td{cls} style="background:{heat_color(v, lo, hi)};--d:{d}ms" '
                          f'title="{e(r["name"])}, {dshort(w)}: {e(tip)}">{label}</td>')
         short = r["name"].split(" · ")[0]
         base = f'<span class="via">from {e(r["base_name"])}</span>' if r.get("base_of") else ""
@@ -216,10 +222,15 @@ table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-
 dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font-size:14px}dt{font-style:italic}dd{margin:0}
 .lodg{margin:10px 0 0;padding-left:18px;font-size:14px}.warn{margin:10px 0 0;font-size:14px}
 @media (max-width:420px){.cards{grid-template-columns:1fr}dl{grid-template-columns:1fr}dt{margin-top:6px}}
-/* heatmap load: tiles settle in on a diagonal wave */
-.heat td{animation:settle .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d)}
-@keyframes settle{from{opacity:0;transform:translateY(6px) scale(.6);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
-@media (prefers-reduced-motion:reduce){.heat td{animation:none}body{transition:none}}
+/* heatmap load: colour ripples out from the cheapest tile */
+.heat td{animation:ripple .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
+@keyframes ripple{0%{background-color:var(--card);color:transparent;transform:scale(.82)}
+  55%{transform:scale(1.06)}100%{transform:none}}
+.heat td.best{position:relative;z-index:1}
+.heat td.best::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  animation:ring 1.1s cubic-bezier(.2,.8,.2,1) .15s both}
+@keyframes ring{from{box-shadow:0 0 0 0 var(--fg);opacity:.55}to{box-shadow:0 0 0 14px var(--fg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.heat td,.heat td.best::after{animation:none}body{transition:none}}
 """
 
 THEME_BOOT = """(function(){try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}})();"""
@@ -231,7 +242,7 @@ const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : mq.mat
 const sync = () => sw.setAttribute('aria-checked', isDark());
 sw.onclick = () => { root.dataset.theme = isDark() ? 'light' : 'dark'; try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {} sync(); };
 mq.addEventListener('change', sync); sync();
-const replay = s => s.querySelectorAll('.heat td').forEach(td => { td.style.animation = 'none'; td.offsetWidth; td.style.animation = ''; });
+const replay = s => s.querySelector('.heat').getAnimations({subtree: true}).forEach(a => { a.cancel(); a.play(); });
 const pick = {s: document.querySelector('.scen').dataset.s, o: document.querySelector('.scen').dataset.o};
 const show = () => document.querySelectorAll('.scen').forEach(s => {
   const was = s.hidden; s.hidden = s.dataset.s !== pick.s || s.dataset.o !== pick.o; if (was && !s.hidden) replay(s); });
