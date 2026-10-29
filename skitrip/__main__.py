@@ -57,7 +57,9 @@ def cmd_passes(args, cfg):
 def flights_done(st, party) -> set:
     """(город, аэропорт, дата, состав, источник) — что уже собрано сегодня."""
     # поиски до dead_since шли по странице и часто ложно давали «нет рейсов» — их не считаем сделанными
-    today = max(dt.date.today().isoformat(), str(load_config()["flights"].get("dead_since", "")))
+    # «сделано» = найдено за последние 3 дня: прерванный скан можно продолжить и на следующий день
+    recent = (dt.datetime.now() - dt.timedelta(days=3)).isoformat(timespec="seconds")
+    today = max(recent, str(load_config()["flights"].get("dead_since", "")))
     return {(x["origin"], x["dest"], x["out_date"], x.get("pax") or plan.gkey(party), x.get("source") or "google")
             for rows in st.latest_flights().values() for x in rows if x["scanned_at"] >= today}
 
