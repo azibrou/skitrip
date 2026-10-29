@@ -111,11 +111,21 @@ def fetch(resort: dict, check_in: dt.date, nights: int, party: dict, cfg: dict, 
 
 # --- Google Hotels: отели и апартаменты с Booking и сайтов отелей ---
 
+COUNTRY = {"AT": "Austria", "IT": "Italy", "FR": "France", "CH": "Switzerland"}
+
+
 def hotel_place(resort: dict) -> str:
-    return resort.get("base_name") or resort.get("hotel_query") or resort["name"].split(" /")[0].split(" (")[0].split(" –")[0]
+    """Название места для Google Hotels — со страной, иначе Google путает (Längenfeld → Langenfeld у Дюссельдорфа)."""
+    place = (resort.get("base_hotel_query") or resort.get("base_name") or resort.get("hotel_query")
+             or resort["name"].split(" /")[0].split(" (")[0].split(" –")[0])
+    return f"{place}, {COUNTRY.get(resort['country'], resort['country'])}"
 
 
-def _google_hotels_page(place: str, check_in: dt.date, check_out: dt.date, nights: int, cfg: dict) -> list[dict] | None:
+SKIP_WORDS = ("camping", "campsite", "camp&")
+
+
+def _google_hotels_page(place: str, check_in: dt.date, check_out: dt.date, nights: int, cfg: dict,
+                        gl: str = "ee") -> list[dict] | None:
     """Отели из одной выдачи. None — Google не понял даты (цены не за nights ночей)."""
     import re
     import urllib.parse
@@ -128,7 +138,7 @@ def _google_hotels_page(place: str, check_in: dt.date, check_out: dt.date, night
     q = f"hotels in {place} from {check_in:%-d %B %Y} to {check_out:%-d %B %Y} for 2 adults"
     client = Client(impersonate="chrome_145", impersonate_os="macos", referer=True, cookie_store=True)
     html = client.get("https://www.google.com/travel/search",
-                      params={"q": q, "hl": "en-GB", "gl": "ee", "curr": cfg["trip"]["currency"]},
+                      params={"q": q, "hl": "en-GB", "gl": gl, "curr": cfg["trip"]["currency"]},
                       headers={"Cookie": CONSENT_COOKIE}).text
     seen, rows, wrong = set(), [], 0
     for node in LexborHTMLParser(html).css("div.CQYfx.UDzrdc"):
@@ -148,7 +158,7 @@ def _google_hotels_page(place: str, check_in: dt.date, check_out: dt.date, night
         if card is None or not card.css("h2"):
             continue
         name = card.css("h2")[0].text().strip()
-        if name in seen:
+        if name in seen or any(w in name.lower() for w in SKIP_WORDS):
             continue
         seen.add(name)
         rows.append({"title": name, "total": float(m.group(1).replace(",", "")), "rating": 0,
@@ -169,10 +179,12 @@ def google_hotels(resort: dict, check_in: dt.date, nights: int, cfg: dict, top_n
     check_out = check_in + dt.timedelta(days=nights)
     place = hotel_place(resort)
     # «Breuil-Cervinia» Google понимает хуже, чем «Cervinia» — пробуем упрощённые названия
-    variants = list(dict.fromkeys([place, place.replace("-", " "), place.split("-")[-1].strip(), place.split(" ")[0]]))
+    head, _, country = place.rpartition(", ")
+    variants = list(dict.fromkeys([place, f"{head.replace('-', ' ')}, {country}",
+                                   f"{head.split('-')[-1].strip()}, {country}"]))
     rows = None
     for v in variants:
-        rows = _google_hotels_page(v, check_in, check_out, nights, cfg)
+        rows = _google_hotels_page(v, check_in, check_out, nights, cfg, gl=resort["country"].lower())
         if rows is not None:
             place = v
             break

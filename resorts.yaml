@@ -22,7 +22,7 @@ resorts:
     coords: [46.9655, 11.0076]
     lodging_bbox: [46.93, 10.97, 47.00, 11.04]
     bases:
-      - {id: laengenfeld, name: "Längenfeld", lodging_bbox: [47.04, 10.93, 47.10, 11.00], km: 15, note: "Ötztal Superskipass, скибас до Sölden"}
+      - {id: laengenfeld, name: "Längenfeld", hotel_query: "Längenfeld Ötztal", lodging_bbox: [47.04, 10.93, 47.10, 11.00], km: 15, note: "Ötztal Superskipass, скибас до Sölden"}
     airports: {INN: 87, FMM: 200, MUC: 250, VRN: 270, BGY: 300}
     lift_pass:
       pass_name: Ötztal Superskipass
@@ -216,7 +216,7 @@ resorts:
     coords: [45.2980, 6.5800]
     lodging_bbox: [45.28, 6.56, 45.32, 6.60]
     bases:
-      - {id: menuires, name: "Les Menuires / St-Martin", lodging_bbox: [45.29, 6.50, 45.36, 6.56], km: 10, note: "пасс Val Thorens; на Les Menuires нужен 3 Vallées"}
+      - {id: menuires, name: "Les Menuires / St-Martin", hotel_query: "Les Menuires", lodging_bbox: [45.29, 6.50, 45.36, 6.56], km: 10, note: "пасс Val Thorens; на Les Menuires нужен 3 Vallées"}
     airports: {GVA: 200, LYS: 200, CMF: 140, TRN: 220}
     lift_pass:
       pass_name: Val Thorens – Orelle
@@ -326,7 +326,7 @@ resorts:
     coords: [46.4380, 11.8640]
     lodging_bbox: [46.40, 11.83, 46.52, 11.93]   # Arabba, Malga Ciapela, Rocca Pietore
     bases:
-      - {id: canazei, name: "Canazei / Campitello", lodging_bbox: [46.46, 11.73, 46.49, 11.79], km: 25, note: "Dolomiti Superski, через перевал Fedaia"}
+      - {id: canazei, name: "Canazei / Campitello", hotel_query: "Canazei", lodging_bbox: [46.46, 11.73, 46.49, 11.79], km: 25, note: "Dolomiti Superski, через перевал Fedaia"}
     airports: {TSF: 140, VCE: 165, INN: 200, VRN: 230, BGY: 320, MUC: 320, MXP: 380}
     lift_pass:
       pass_name: Dolomiti Superski
@@ -371,7 +371,7 @@ resorts:
     coords: [45.5070, 6.6780]
     lodging_bbox: [45.48, 6.64, 45.56, 6.75]
     bases:
-      - {id: aime, name: "Aime", lodging_bbox: [45.54, 6.63, 45.57, 6.67], km: 18, note: ""}
+      - {id: aime, name: "Aime", hotel_query: "Aime-la-Plagne", lodging_bbox: [45.54, 6.63, 45.57, 6.67], km: 18, note: ""}
     airports: {CMF: 120, GVA: 190, LYS: 200, TRN: 230}
     lift_pass:
       pass_name: La Plagne (без Paradiski)

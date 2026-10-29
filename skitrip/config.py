@@ -29,7 +29,8 @@ def load_resorts(path: str | Path | None = None) -> list[dict]:
         for b in r.get("bases") or []:
             out.append({**r, "id": f"{r['id']}@{b['id']}", "name": f"{r['name']} · жильё в {b['name']}",
                         "lodging_bbox": b["lodging_bbox"], "base_of": r["id"], "base_name": b["name"],
-                        "base_km": b["km"], "base_note": b.get("note", ""), "bases": []})
+                        "base_km": b["km"], "base_note": b.get("note", ""), "base_hotel_query": b.get("hotel_query"),
+                        "bases": []})
     return out
 
 
