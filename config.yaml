@@ -19,12 +19,12 @@ trip:
 
 flights:
   max_stops: 1
+  delay_s: [3, 7]             # пауза между запросами к Google
+  max_consecutive_errors: 4
 
 self_transfer:                # два отдельных билета Ryanair через хаб, с повторной регистрацией
   enabled: true
   min_connection_h: 3         # запас между рейсами
-  delay_s: [3, 7]             # пауза между запросами к Google
-  max_consecutive_errors: 4
 
 lodging:
   source: airbnb
