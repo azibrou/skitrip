@@ -115,37 +115,37 @@ def hotel_place(resort: dict) -> str:
     return resort.get("base_name") or resort.get("hotel_query") or resort["name"].split(" /")[0].split(" (")[0].split(" –")[0]
 
 
-def google_hotels(resort: dict, check_in: dt.date, nights: int, cfg: dict, top_n: int = 5) -> dict:
-    """Цена за весь срок с налогами по каждому отелю в выдаче Google Hotels.
-
-    Google не учитывает число гостей из запроса: цены — за номер на 2 взрослых.
-    """
+def _google_hotels_page(place: str, check_in: dt.date, check_out: dt.date, nights: int, cfg: dict) -> list[dict] | None:
+    """Отели из одной выдачи. None — Google не понял даты (цены не за nights ночей)."""
     import re
     import urllib.parse
 
+    from primp import Client
     from selectolax.lexbor import LexborHTMLParser
 
     from .flights import CONSENT_COOKIE
 
-    from primp import Client
-
-    check_out = check_in + dt.timedelta(days=nights)
-    place = hotel_place(resort)
     q = f"hotels in {place} from {check_in:%-d %B %Y} to {check_out:%-d %B %Y} for 2 adults"
     client = Client(impersonate="chrome_145", impersonate_os="macos", referer=True, cookie_store=True)
     html = client.get("https://www.google.com/travel/search",
                       params={"q": q, "hl": "en-GB", "gl": "ee", "curr": cfg["trip"]["currency"]},
                       headers={"Cookie": CONSENT_COOKIE}).text
-    page = LexborHTMLParser(html)
-    seen, rows = set(), []
-    for node in page.css("div.CQYfx.UDzrdc"):
-        m = re.search(r"([\d,]+)\s*total", node.text().replace("\xa0", " "))
+    seen, rows, wrong = set(), [], 0
+    for node in LexborHTMLParser(html).css("div.CQYfx.UDzrdc"):
+        box = node.parent.text(separator=" ").replace("\xa0", " ") if node.parent else ""
+        m = re.search(r"([\d,]+)\s*total", box)
+        k = re.search(r"(\d+)\s+nights?", box)
+        if not m:
+            continue
+        if not k or int(k.group(1)) != nights:  # цена не за весь срок
+            wrong += 1
+            continue
         card = node
         for _ in range(12):
             card = card.parent
             if card is None or card.css("h2"):
                 break
-        if not m or card is None or not card.css("h2"):
+        if card is None or not card.css("h2"):
             continue
         name = card.css("h2")[0].text().strip()
         if name in seen:
@@ -153,8 +153,32 @@ def google_hotels(resort: dict, check_in: dt.date, nights: int, cfg: dict, top_n
         seen.add(name)
         rows.append({"title": name, "total": float(m.group(1).replace(",", "")), "rating": 0,
                      "url": "https://www.google.com/travel/search?q=" + urllib.parse.quote(f"{name} {place}")})
-    rows.sort(key=lambda r: r["total"])
-    url = "https://www.google.com/travel/search?q=" + urllib.parse.quote(q)
+    if not rows and wrong:
+        return None
+    return rows
+
+
+def google_hotels(resort: dict, check_in: dt.date, nights: int, cfg: dict, top_n: int = 5) -> dict:
+    """Цена за весь срок с налогами по каждому отелю в выдаче Google Hotels.
+
+    Google не учитывает число гостей из запроса: цены — за номер на 2 взрослых.
+    Берутся только цены, где Google явно пишет «N nights» с нашим числом ночей.
+    """
+    import urllib.parse
+
+    check_out = check_in + dt.timedelta(days=nights)
+    place = hotel_place(resort)
+    # «Breuil-Cervinia» Google понимает хуже, чем «Cervinia» — пробуем упрощённые названия
+    variants = list(dict.fromkeys([place, place.replace("-", " "), place.split("-")[-1].strip(), place.split(" ")[0]]))
+    rows = None
+    for v in variants:
+        rows = _google_hotels_page(v, check_in, check_out, nights, cfg)
+        if rows is not None:
+            place = v
+            break
+    rows = sorted(rows or [], key=lambda r: r["total"])
+    url = "https://www.google.com/travel/search?q=" + urllib.parse.quote(
+        f"hotels in {place} from {check_in:%-d %B %Y} to {check_out:%-d %B %Y} for 2 adults")
     if not rows:
         return {"n": 0, "min": None, "p25": None, "median": None, "top": [], "search_url": url}
     prices = [r["total"] for r in rows]
