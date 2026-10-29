@@ -13,6 +13,7 @@ STATUS = {
     "from_2025_26": "25/26 prices",
     "estimate": "estimate",
 }
+CITY = {"TLL": "Tallinn", "RIX": "Riga", "WAW": "Warsaw"}
 MONTHS = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 # Strings saved in the database by older scans were in Russian.
@@ -70,7 +71,8 @@ def air_rows(a, r, cfg) -> str:
                else f'<dt>Drive</dt><dd>from {e(code)}, {km} km <i>not in the total</i></dd>'))
 
 
-def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list[dict], sc: dict, demo: bool) -> str:
+def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list[dict], sc: dict, demo: bool,
+             froms: list[str] | None = None) -> str:
     party = sc["party"]
     kids = party.get("children", [])
     by = {(o["resort"]["id"], o["week"]): o for o in options}
@@ -111,7 +113,7 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
                        if a and a.get("estimate") and a.get("ratio", 1) != 1 else "")
         cards.append(f"""
 <article class="card">
-  <header><span class="rank">{i}</span><div><h3>{e(r['name'])}</h3>{base}
+  <header><div><h3>{e(r['name'])}</h3>{base}
   <p>{dshort(o['week'])} – {dshort(o['check_out'])} · {f"fly to {e(a['airport'])}, {a['hours']} h to the resort" if a else "no flight"}</p></div>
   <div class="tot">{eur(score(o, full))}</div></header>
   <dl>
@@ -151,7 +153,7 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
     banner = nofly + '<p class="note"><i>Demo: flights and lodging are synthetic numbers to show the layout. Lift passes are real.</i></p>' if demo else ""
     car = cfg['transfer']['car_rent_week'] or cfg['transfer']['per_km']
 
-    return f"""<p class="meta">{who} · from {', '.join(origins(cfg))} · {cfg['trip']['nights']} nights, {cfg['trip']['ski_days']}-day pass · {filled} of {len(options)} priced · built {dt.datetime.now():%d %b %Y, %H:%M}</p>
+    return f"""<p class="meta">{who} · from {' or '.join(CITY.get(o, o) for o in (froms or origins(cfg)))} · {cfg['trip']['nights']} nights, {cfg['trip']['ski_days']}-day pass · {filled} of {len(options)} priced · built {dt.datetime.now():%d %b %Y, %H:%M}</p>
 {banner}
 <h2>Resort × check-in week <i>thousand €</i></h2>
 <table class="heat"><colgroup><col class="cn">{'<col>' * len(weeks)}</colgroup><thead><tr><th></th>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table>
@@ -179,7 +181,7 @@ a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-und
 :focus-visible{outline:2px solid var(--rule);outline-offset:2px}
 p{margin:0}.meta{margin:14px 0 0}.cap{margin:12px 0 0;font-size:14px}.note{margin:12px 0 0}
 .top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:baseline;justify-content:space-between}
-.bar{margin:18px 0 0}
+.bar{margin:18px 0 0;display:flex;flex-wrap:wrap;gap:8px 48px}
 .tog{display:flex;flex-wrap:wrap;gap:4px 20px}
 .tog button,.theme{font:inherit;color:inherit;background:none;border:0;padding:2px 0;cursor:pointer;border-bottom:1px solid transparent}
 .tog button[aria-selected=true]{border-bottom-color:var(--rule);font-style:italic}
@@ -209,7 +211,7 @@ table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
 .card{background:var(--card);border-radius:10px;padding:16px}
 .card header{display:flex;gap:10px;align-items:flex-start}.card header>div{flex:1}.card header p{font-size:14px}
-.rank{font-style:italic;min-width:18px}.tot{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.tot{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
 dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font-size:14px}dt{font-style:italic}dd{margin:0}
 .lodg{margin:10px 0 0;padding-left:18px;font-size:14px}.warn{margin:10px 0 0;font-size:14px}
 @media (max-width:420px){.cards{grid-template-columns:1fr}dl{grid-template-columns:1fr}dt{margin-top:6px}}
@@ -229,25 +231,41 @@ const sync = () => sw.setAttribute('aria-checked', isDark());
 sw.onclick = () => { root.dataset.theme = isDark() ? 'light' : 'dark'; try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {} sync(); };
 mq.addEventListener('change', sync); sync();
 const replay = s => s.querySelectorAll('.heat td').forEach(td => { td.style.animation = 'none'; td.offsetWidth; td.style.animation = ''; });
+const pick = {s: document.querySelector('.scen').dataset.s, o: document.querySelector('.scen').dataset.o};
+const show = () => document.querySelectorAll('.scen').forEach(s => {
+  const was = s.hidden; s.hidden = s.dataset.s !== pick.s || s.dataset.o !== pick.o; if (was && !s.hidden) replay(s); });
 document.querySelectorAll('.tog button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.tog button').forEach(x => x.setAttribute('aria-selected', x === b));
-  document.querySelectorAll('.scen').forEach(s => { s.hidden = s.dataset.f !== b.dataset.f; if (!s.hidden) replay(s); });
-  try { localStorage.setItem('scenario', b.dataset.f); } catch (e) {}
+  const k = 's' in b.dataset ? 's' : 'o';
+  b.parentNode.querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', x === b));
+  pick[k] = b.dataset[k]; show();
+  try { localStorage.setItem('pick-' + k, pick[k]); } catch (e) {}
 });
-try { const f = localStorage.getItem('scenario'); const b = f && document.querySelector('.tog button[data-f="' + f + '"]'); if (b) b.click(); } catch (e) {}
+for (const k of ['s', 'o']) try { const v = localStorage.getItem('pick-' + k); const b = v && document.querySelector('.tog button[data-' + k + '="' + v + '"]'); if (b) b.click(); } catch (e) {}
 """
 
 
 def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options, demo: bool = False) -> str:
-    """options — a list of options, or {scenario key: options} for the toggle."""
+    """options — a list of options, or {(scenario key, origin | 'any'): options} for the toggles."""
     specs = {s["key"]: s for s in scenarios(cfg)}
-    scen = options if isinstance(options, dict) else {next(iter(specs)): options}
+    if not isinstance(options, dict):
+        options = {next(iter(specs)): options}
+    scen = {(k if isinstance(k, tuple) else (k, "any")): v for k, v in options.items()}
+    skeys = list(dict.fromkeys(k[0] for k in scen))
+    okeys = list(dict.fromkeys(k[1] for k in scen))
+    first = next(iter(scen))
     sections = "".join(
-        f'<section class="scen" data-f="{k}"{"" if i == 0 else " hidden"}>{_section(cfg, resorts, weeks, opts, specs[k], demo)}</section>'
-        for i, (k, opts) in enumerate(scen.items()))
-    toggle = "" if len(scen) < 2 else '<div class="tog" role="tablist" aria-label="Group">' + "".join(
-        f'<button role="tab" data-f="{k}" aria-selected="{str(i == 0).lower()}">{e(specs[k]["label"])}</button>'
-        for i, k in enumerate(scen)) + "</div>"
+        f'<section class="scen" data-s="{s}" data-o="{o}"{"" if (s, o) == first else " hidden"}>'
+        f'{_section(cfg, resorts, weeks, opts, specs[s], demo, None if o == "any" else [o])}</section>'
+        for (s, o), opts in scen.items())
+
+    def group(name, attr, keys, label):
+        if len(keys) < 2:
+            return ""
+        return (f'<div class="tog" role="tablist" aria-label="{name}">' + "".join(
+            f'<button role="tab" data-{attr}="{k}" aria-selected="{str(i == 0).lower()}">{e(label(k))}</button>'
+            for i, k in enumerate(keys)) + "</div>")
+    toggle = (group("Group", "s", skeys, lambda k: specs[k]["label"])
+              + group("Fly from", "o", okeys, lambda k: "Tallinn or Riga" if k == "any" else f"from {CITY.get(k, k)}"))
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Ski Week Cost</title>
 <script>{THEME_BOOT}</script>

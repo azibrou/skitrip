@@ -195,7 +195,10 @@ def cmd_report(args, cfg, demo_data=None):
     else:
         st = Store(DB)
         flights, lodging, snow = st.latest_flights(), st.latest_lodging(), st.latest_snow()
-    scen = {s["key"]: plan.build(cfg, resorts, weeks, flights, lodging, snow, scenario=s) for s in plan.scenarios(cfg)}
+    # переключатели в отчёте: состав группы × город вылета (any — самый дешёвый из всех)
+    scen = {(s["key"], o): plan.build(cfg, resorts, weeks, flights, lodging, snow, scenario=s,
+                                      only_origin=None if o == "any" else o)
+            for s in plan.scenarios(cfg) for o in ["any", *plan.origins(cfg)]}
     opts = next(iter(scen.values()))
     OUT.parent.mkdir(exist_ok=True)
     out = OUT.with_name("report-demo.html") if demo_data else OUT

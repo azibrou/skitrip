@@ -87,7 +87,7 @@ def lodging_choice(rows, cfg: dict, families: int, party: dict | None = None):
 
 
 def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, lodging: dict, snow: dict,
-          families: int = 1, scenario: dict | None = None) -> list[dict]:
+          families: int = 1, scenario: dict | None = None, only_origin: str | None = None) -> list[dict]:
     sc = scenario or scenarios({**cfg, "scenarios": [families]})[0]
     party, families, ratio = sc["party"], sc["units"], sc["air_ratio"]
     base_pax, own_pax = gkey(cfg["party"]), gkey(party)
@@ -96,6 +96,8 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
     n_people = party["adults"] + len(party.get("children", []))
     bags = cfg["costs"].get("ski_bag_per_person_rt", 0) * n_people
     orig = origins(cfg)
+    if only_origin:  # вылет только из этого города
+        orig = {only_origin: orig[only_origin]}
     options = []
     for r in resorts:
         for wk in weeks:
