@@ -165,7 +165,7 @@ def test_two_families_lodging_and_passes():
 def test_adult_only_scenarios():
     cfg = load_config()
     R = {r["id"]: r for r in load_resorts()}
-    sc = {s["key"]: s for s in plan.scenarios(cfg)}
+    sc = {s["key"]: s for s in plan.scenarios({**cfg, "scenarios": [*cfg["scenarios"], {"key": "a1", "adults": 1}]})}
     assert sc["a1"]["party"]["children"] == [] and sc["a1"]["pass_party"]["adults"] == 1
     wk = dt.date(2027, 1, 16)
     fl = {("SZG", str(wk)): [{"price": 300, "origin": "TLL", "url": "x"}]}

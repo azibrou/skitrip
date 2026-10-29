@@ -54,6 +54,13 @@ def cmd_passes(args, cfg):
             print(f"{'':12}{line}")
 
 
+def flights_done(st, party) -> set:
+    """(город, аэропорт, дата, состав, источник) — что уже собрано сегодня."""
+    today = dt.date.today().isoformat()
+    return {(x["origin"], x["dest"], x["out_date"], x.get("pax") or plan.gkey(party), x.get("source") or "google")
+            for rows in st.latest_flights().values() for x in rows if x["scanned_at"] >= today}
+
+
 def cmd_run(args, cfg):
     resorts, weeks = select(args, cfg)
     st = Store(DB)
@@ -80,6 +87,9 @@ def cmd_run(args, cfg):
         airports = sorted({a for r in resorts for a in r["airports"]})
         origins = args.origins or list(plan.origins(cfg))
         jobs = [(g, o, a, w) for g in fly for o in origins for w in weeks for a in airports]
+        if args.skip_done:  # уже собранное сегодня не повторяем
+            fd = flights_done(st, party)
+            jobs = [j for j in jobs if (j[1], j[2], str(j[3]), j[0], "google") not in fd]
         if args.limit:
             jobs = jobs[: args.limit]
         errors, prev = 0, st.latest_flights()
@@ -110,6 +120,9 @@ def cmd_run(args, cfg):
         airports = {a for r in resorts for a in r["airports"]}
         origins = args.origins or list(plan.origins(cfg))
         jobs = [(g, o, w) for g in fly for o in origins for w in weeks]
+        if args.skip_done:
+            done = {(x[0], x[2], x[3]) for x in flights_done(st, party) if x[4] == "self"}
+            jobs = [j for j in jobs if (j[1], str(j[2]), j[0]) not in done]
         for i, (g, o, w) in enumerate(jobs, 1):
             ret = w + dt.timedelta(days=nights)
             try:
@@ -265,7 +278,7 @@ def main(argv=None):
             p.add_argument("--lodging-kinds", nargs="*", choices=["entire", "entire-big", "hotel", "ghotel"],
                            help="типы жилья, по умолчанию lodging.kinds из config.yaml")
             p.add_argument("--pax", nargs="*", help="составы групп, напр. 2+0 1+0; по умолчанию все из scenarios")
-            p.add_argument("--skip-done", action="store_true", help="не повторять жильё, уже собранное сегодня")
+            p.add_argument("--skip-done", action="store_true", help="не повторять то, что уже собрано сегодня")
     args = ap.parse_args(argv)
     cfg = load_config(args.config)
     if args.cmd == "passes":
