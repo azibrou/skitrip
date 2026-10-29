@@ -153,7 +153,7 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
     banner = nofly + '<p class="note"><i>Demo: flights and lodging are synthetic numbers to show the layout. Lift passes are real.</i></p>' if demo else ""
     car = cfg['transfer']['car_rent_week'] or cfg['transfer']['per_km']
 
-    return f"""<p class="meta">{who} · from {' or '.join(CITY.get(o, o) for o in (froms or origins(cfg)))} · {cfg['trip']['nights']} nights, {cfg['trip']['ski_days']}-day pass · {filled} of {len(options)} priced · built {dt.datetime.now():%d %b %Y, %H:%M}</p>
+    return f"""<p class="meta">{who} · from {', '.join(CITY.get(o, o) for o in (froms or origins(cfg)))} · {cfg['trip']['nights']} nights, {cfg['trip']['ski_days']}-day pass · {filled} of {len(options)} priced · built {dt.datetime.now():%d %b %Y, %H:%M}</p>
 {banner}
 <h2>Resort × check-in week <i>thousand €</i></h2>
 <table class="heat"><colgroup><col class="cn">{'<col>' * len(weeks)}</colgroup><thead><tr><th></th>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table>
@@ -167,9 +167,9 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
 
 
 CSS = """
-:root{--bg:#fff;--fg:#000;--rule:#000;--card:rgba(0,0,0,.04);--heat-l:0.86;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#202124;--fg:#d4d4d2;--rule:#d4d4d2;--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}}
-:root[data-theme=dark]{--bg:#202124;--fg:#d4d4d2;--rule:#d4d4d2;--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
+:root{--bg:#fff;--fg:#000;--rule:#000;--hair:rgba(0,0,0,.12);--card:rgba(0,0,0,.04);--heat-l:0.86;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#202124;--fg:#d4d4d2;--rule:#d4d4d2;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#202124;--fg:#d4d4d2;--rule:#d4d4d2;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-optical-sizing:auto;font-feature-settings:"cv11","ss01";transition:background .25s,color .25s}
 main{width:100%;padding:32px 64px 72px}
@@ -208,6 +208,7 @@ table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-
 .ref thead th{position:sticky;top:0;z-index:1;background:var(--bg);box-shadow:inset 0 -1px var(--rule)}
 .ref td,.ref th{text-align:left;padding:8px 12px 8px 0;vertical-align:top}
 .ref .num{text-align:right}
+.ref tbody tr+tr td{border-top:1px solid var(--hair)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
 .card{background:var(--card);border-radius:10px;padding:16px}
 .card header{display:flex;gap:10px;align-items:flex-start}.card header>div{flex:1}.card header p{font-size:14px}
@@ -253,9 +254,12 @@ def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options, demo: 
     skeys = list(dict.fromkeys(k[0] for k in scen))
     okeys = list(dict.fromkeys(k[1] for k in scen))
     first = next(iter(scen))
+    cities = [o for o in okeys if o != "any"] or list(origins(cfg))
+    names = [CITY.get(o, o) for o in cities]
+    either = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " or " + names[-1]
     sections = "".join(
         f'<section class="scen" data-s="{s}" data-o="{o}"{"" if (s, o) == first else " hidden"}>'
-        f'{_section(cfg, resorts, weeks, opts, specs[s], demo, None if o == "any" else [o])}</section>'
+        f'{_section(cfg, resorts, weeks, opts, specs[s], demo, cities if o == "any" else [o])}</section>'
         for (s, o), opts in scen.items())
 
     def group(name, attr, keys, label):
@@ -265,7 +269,7 @@ def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options, demo: 
             f'<button role="tab" data-{attr}="{k}" aria-selected="{str(i == 0).lower()}">{e(label(k))}</button>'
             for i, k in enumerate(keys)) + "</div>")
     toggle = (group("Group", "s", skeys, lambda k: specs[k]["label"])
-              + group("Fly from", "o", okeys, lambda k: "Tallinn or Riga" if k == "any" else f"from {CITY.get(k, k)}"))
+              + group("Fly from", "o", okeys, lambda k: either if k == "any" else f"from {CITY.get(k, k)}"))
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Ski Week Cost</title>
 <script>{THEME_BOOT}</script>
