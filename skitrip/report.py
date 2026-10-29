@@ -90,7 +90,9 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
             label = "" if v is None else f"{v/1000:.1f}"
             cells.append(f'<td style="background:{heat_color(v, lo, hi)};--d:{(ri + wi) * 14}ms" '
                          f'title="{e(r["name"])}, {dshort(w)}: {e(tip)}">{label}</td>')
-        rows.append(f'<tr><th class="rn">{e(r["name"])} <i>{r["country"]}</i></th>{"".join(cells)}</tr>')
+        short = r["name"].split(" · ")[0]
+        base = f'<span class="via">from {e(r["base_name"])}</span>' if r.get("base_of") else ""
+        rows.append(f'<tr><th class="rn" scope="row">{e(short)} ({r["country"]}){base}</th>{"".join(cells)}</tr>')
 
     cards = []
     for i, o in enumerate(top, 1):
@@ -152,12 +154,12 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
     return f"""<p class="meta">{who} · from {', '.join(origins(cfg))} · {cfg['trip']['nights']} nights, {cfg['trip']['ski_days']}-day pass · {filled} of {len(options)} priced · built {dt.datetime.now():%d %b %Y, %H:%M}</p>
 {banner}
 <h2>Resort × check-in week <i>thousand €</i></h2>
-<div class="scroll"><table class="heat"><thead><tr><th></th>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table></div>
+<table class="heat"><colgroup><col class="cn">{'<col>' * len(weeks)}</colgroup><thead><tr><th></th>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table>
 <p class="cap">Total = flights for everyone{' + car and fuel' if car else ' (car and driving not included)'} from the best airport + cheapest lodging ({cfg['lodging']['stat']} of Airbnb homes, Airbnb hotels and Google Hotels) + lift passes for adults. Grey cells: missing flight or lodging price, or the resort is closed.</p>
 <h2>Top {len(top)}</h2>
 <div class="cards">{''.join(cards) or '<p><i>No complete option yet — run a scan.</i></p>'}</div>
 <h2>Resorts and lift passes</h2>
-<div class="scroll"><table class="ref"><thead><tr><th>Resort</th><th>Pass <i>adult / child</i></th><th class="num">Your group</th><th>Children</th><th>Data</th><th>Snow at the top</th><th>Airports</th></tr></thead><tbody>{''.join(ref)}</tbody></table></div>
+<table class="ref"><thead><tr><th>Resort</th><th>Pass <i>adult / child</i></th><th class="num">Your group</th><th>Children</th><th>Data</th><th>Snow at the top</th><th>Airports</th></tr></thead><tbody>{''.join(ref)}</tbody></table>
 <p class="cap">Flight and lodging prices change; links open a live search. “Your group” is the lift pass cost for the first week of the season.</p>
 """
 
@@ -167,9 +169,9 @@ CSS = """
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#202124;--fg:#d4d4d2;--rule:#d4d4d2;--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}}
 :root[data-theme=dark]{--bg:#202124;--fg:#d4d4d2;--rule:#d4d4d2;--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Source Serif 4",Georgia,"Times New Roman",serif;font-optical-sizing:auto;transition:background .25s,color .25s}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-optical-sizing:auto;font-feature-settings:"cv11","ss01";transition:background .25s,color .25s}
 main{max-width:1180px;margin:0 auto;padding:32px 16px 72px}
-h1{font-size:30px;font-weight:600;margin:0;letter-spacing:-.01em}
+h1{font-size:28px;font-weight:600;margin:0;letter-spacing:-.02em}
 h2{font-size:20px;font-weight:600;margin:44px 0 14px}h2 i{font-weight:400;font-size:16px}
 h3{font-size:17px;font-weight:600;margin:0}
 a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
@@ -184,18 +186,22 @@ p{margin:0}.meta{margin:14px 0 0}.cap{margin:12px 0 0;font-size:14px}.note{margi
 .theme .sw{width:34px;height:18px;border:1px solid var(--rule);border-radius:99px;position:relative}
 .theme .sw::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--fg);transition:transform .2s}
 .theme[aria-checked=true] .sw::after{transform:translateX(16px)}
-.scroll{overflow-x:auto}
 table{width:100%;font-variant-numeric:tabular-nums lining-nums}
 thead th{font-weight:600}
-/* heatmap: no frame, no rules — just tiles */
-table.heat{border-collapse:separate;border-spacing:2px;font-size:13px}
-.heat th,.heat td{padding:5px 4px;text-align:center;white-space:nowrap;font-weight:400}
-.heat thead th{font-style:italic}
-.heat td{min-width:42px;border-radius:3px}
-.heat th.rn{text-align:left;position:sticky;left:0;background:var(--bg);padding:5px 12px 5px 0}
-.heat th.rn i{font-size:12px}
+/* heatmap: no frame, no rules — just tiles; always fits the page width */
+table.heat{border-collapse:separate;border-spacing:2px;font-size:12px;table-layout:fixed}
+.heat col.cn{width:200px}
+@media (max-width:900px){.heat col.cn{width:120px}}
+@media (max-width:600px){.heat col.cn{width:96px}}
+.heat th,.heat td{padding:3px 2px;text-align:center;font-weight:400}
+.heat thead th{position:sticky;top:0;z-index:1;background:var(--bg);padding:8px 0 6px;font-weight:600;white-space:nowrap;overflow:hidden}
+.heat td{height:38px;border-radius:3px;overflow:hidden}
+.heat th.rn{text-align:left;padding:3px 10px 3px 0;line-height:1.25;overflow-wrap:anywhere}
+.heat .via{display:block;font-style:italic}
+@media (max-width:900px){.heat{font-size:10px;border-spacing:1px}.heat thead th{font-size:9px;writing-mode:vertical-rl;transform:rotate(180deg);height:46px;padding:4px 0}}
+@media (max-width:600px){.heat td{font-size:0}.heat td{height:30px}}
 /* reference table: book rules */
-table.ref{border-collapse:collapse;font-size:14px;border-top:2px solid var(--rule);border-bottom:2px solid var(--rule)}
+table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-top:2px solid var(--rule);border-bottom:2px solid var(--rule)}
 .ref thead tr{border-bottom:1px solid var(--rule)}
 .ref td,.ref th{text-align:left;padding:8px 12px 8px 0;vertical-align:top}
 .ref .num{text-align:right}
@@ -245,7 +251,7 @@ def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options, demo: 
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Ski Week Cost</title>
 <script>{THEME_BOOT}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,600;1,14..32,400&display=swap" rel="stylesheet">
 <style>{CSS}</style></head><body><main>
 <div class="top"><h1>Ski week: the full cost</h1>
 <button class="theme" role="switch" aria-checked="false" aria-label="Dark theme"><span class="sw"></span><i>dark</i></button></div>
