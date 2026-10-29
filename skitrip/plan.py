@@ -91,6 +91,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
     sc = scenario or scenarios({**cfg, "scenarios": [families]})[0]
     party, families, ratio = sc["party"], sc["units"], sc["air_ratio"]
     base_pax, own_pax = gkey(cfg["party"]), gkey(party)
+    hubs = set((cfg.get("self_transfer") or {}).get("hubs") or [])
     nights = cfg["trip"]["nights"]
     stat = cfg["lodging"]["stat"]
     n_people = party["adults"] + len(party.get("children", []))
@@ -108,6 +109,9 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
             for code, km in r["airports"].items():
                 quotes = flights.get((code, str(wk))) or []
                 quotes = [quotes] if isinstance(quotes, dict) else quotes
+                # пересадки через хаб — только если хаб всё ещё включён в config
+                quotes = [q for q in quotes if not (q.get("source") or "").startswith("hub-")
+                          or q["source"][4:] in hubs]
                 # поиск ровно на этот состав; поиск на 2+1 с пересчётом — только если точного нет
                 exact = {(q.get("origin"), q.get("source") or "google") for q in quotes if (q.get("pax") or base_pax) == own_pax}
                 for f in quotes:

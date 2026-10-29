@@ -26,7 +26,7 @@ flights:
 self_transfer:                # два отдельных билета Ryanair через хаб, с повторной регистрацией
   enabled: true
   min_connection_h: 3         # запас между рейсами
-  hubs: [WAW]                 # хабы для 2 отдельных билетов любых авиакомпаний (Google + Ryanair): город → хаб → прямой рейс
+  hubs: []                    # пересадки через хабы (Google + Ryanair) выключены: Варшава — отдельный город вылета
 
 scenarios:                    # переключатель в отчёте
   - {key: f1, label: "1 family (2+1)", families: 1}
