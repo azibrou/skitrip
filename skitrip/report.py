@@ -228,7 +228,8 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font
 .heat td{transition:box-shadow .15s}
 .heat:has(th.rn:hover) td{box-shadow:inset 0 0 0 999px color-mix(in srgb,var(--bg) 40%,transparent)}
 .heat tr:has(th.rn:hover) td{box-shadow:none}
-.heat th.rn{cursor:default}.heat th.rn:hover{font-weight:600}
+.heat th.rn{cursor:default;border-radius:3px}
+.heat th.rn:hover{background:color-mix(in srgb,var(--fg) 6%,var(--bg))}
 /* heatmap load: tiles appear in price order — greens first, reds last */
 .heat td{animation:cheap .26s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
 @keyframes cheap{from{background-color:var(--card);color:transparent;transform:scale(.6)}to{transform:none}}
