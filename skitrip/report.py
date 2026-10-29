@@ -224,6 +224,11 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font
 .lodg{margin:10px 0 0;padding-left:18px;font-size:14px}.warn{margin:10px 0 0;font-size:14px}
 @media (max-width:700px){.cards{grid-template-columns:1fr}}
 @media (max-width:420px){dl{grid-template-columns:1fr}dt{margin-top:6px}}
+/* hover: the row and column under the pointer stay bright, the rest dims a little */
+.heat td{transition:opacity .15s}
+.heat.hov td{opacity:.42}.heat.hov td.on{opacity:1}
+.heat th.on{font-weight:600}
+@media (hover:none){.heat.hov td{opacity:1}}
 /* heatmap load: tiles appear in price order — greens first, reds last */
 .heat td{animation:cheap .26s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
 @keyframes cheap{from{background-color:var(--card);color:transparent;transform:scale(.6)}to{transform:none}}
@@ -240,6 +245,21 @@ const sync = () => sw.setAttribute('aria-checked', isDark());
 sw.onclick = () => { root.dataset.theme = isDark() ? 'light' : 'dark'; try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {} sync(); };
 mq.addEventListener('change', sync); sync();
 const replay = s => s.querySelector('.heat').getAnimations({subtree: true}).forEach(a => { a.cancel(); a.play(); });
+document.querySelectorAll('.heat').forEach(t => {
+  let last = null;
+  const clear = () => { t.classList.remove('hov'); t.querySelectorAll('.on').forEach(x => x.classList.remove('on')); last = null; };
+  t.addEventListener('mouseover', ev => {
+    const cell = ev.target.closest('td, th'); if (!cell || cell === last) return;
+    const tr = cell.parentNode, ri = tr.parentNode.tagName === 'TBODY' ? tr.rowIndex : -1, ci = cell.cellIndex;
+    if (ri < 0 && ci === 0) return clear();
+    t.querySelectorAll('.on').forEach(x => x.classList.remove('on')); last = cell; t.classList.add('hov');
+    for (const row of t.rows) {
+      const inRow = row.rowIndex === ri;
+      [...row.cells].forEach((c, j) => { if (inRow || (ci > 0 && j === ci)) c.classList.add('on'); });
+    }
+  });
+  t.addEventListener('mouseleave', clear);
+});
 const pick = {s: document.querySelector('.scen').dataset.s, o: document.querySelector('.scen').dataset.o};
 const show = () => document.querySelectorAll('.scen').forEach(s => {
   const was = s.hidden; s.hidden = s.dataset.s !== pick.s || s.dataset.o !== pick.o; if (was && !s.hidden) replay(s); });
