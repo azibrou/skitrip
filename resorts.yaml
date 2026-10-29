@@ -170,7 +170,7 @@ resorts:
     glacier: Hochjochferner
     coords: [46.7520, 10.7740]
     lodging_bbox: [46.66, 10.74, 46.78, 10.95]
-    airports: {VRN: 200, INN: 190, BGY: 290, MUC: 330}
+    airports: {VRN: 200, INN: 190, BGY: 290, MUC: 330, MXP: 340}
     lift_pass:
       pass_name: Alpin Arena Senales
       days: 6
@@ -195,7 +195,7 @@ resorts:
     lodging_bbox: [45.43, 6.87, 45.50, 7.02]
     bases:
       - {id: bsm, name: "Bourg-Saint-Maurice", lodging_bbox: [45.60, 6.74, 45.64, 6.79], km: 30, note: ""}
-    airports: {GVA: 220, LYS: 230, CMF: 160, TRN: 220}
+    airports: {GVA: 220, LYS: 230, CMF: 160, TRN: 220, MXP: 330}
     lift_pass:
       pass_name: Tignes – Val d'Isère 6=7
       days: 6
@@ -217,7 +217,7 @@ resorts:
     lodging_bbox: [45.28, 6.56, 45.32, 6.60]
     bases:
       - {id: menuires, name: "Les Menuires / St-Martin", hotel_query: "Les Menuires", lodging_bbox: [45.29, 6.50, 45.36, 6.56], km: 10, note: "Val Thorens pass; Les Menuires slopes need 3 Vallées"}
-    airports: {GVA: 200, LYS: 200, CMF: 140, TRN: 220}
+    airports: {GVA: 200, LYS: 200, CMF: 140, TRN: 220, MXP: 330}
     lift_pass:
       pass_name: Val Thorens – Orelle
       days: 6
@@ -241,7 +241,7 @@ resorts:
     lodging_bbox: [44.99, 6.10, 45.03, 6.15]
     bases:
       - {id: bourg, name: "Bourg-d'Oisans", lodging_bbox: [45.03, 6.00, 45.08, 6.06], km: 25, note: ""}
-    airports: {GNB: 110, LYS: 170, GVA: 230, TRN: 230}
+    airports: {GNB: 110, LYS: 170, GVA: 230, TRN: 230, MXP: 350}
     lift_pass:
       pass_name: Les 2 Alpes
       days: 6
@@ -263,7 +263,7 @@ resorts:
     lodging_bbox: [45.07, 6.03, 45.11, 6.10]
     bases:
       - {id: bourg, name: "Bourg-d'Oisans", lodging_bbox: [45.03, 6.00, 45.08, 6.06], km: 13, note: "21-hairpin road"}
-    airports: {GNB: 100, LYS: 160, GVA: 220, TRN: 230}
+    airports: {GNB: 100, LYS: 160, GVA: 220, TRN: 230, MXP: 350}
     lift_pass:
       pass_name: Alpe d'Huez Grand Domaine
       days: 6
@@ -350,7 +350,7 @@ resorts:
     glacier: Glacier d'Argentière
     coords: [45.9580, 6.9800]
     lodging_bbox: [45.90, 6.84, 46.00, 6.99]     # Chamonix, Argentière, Les Houches
-    airports: {GVA: 90, TRN: 150, LYS: 220}
+    airports: {GVA: 90, TRN: 150, LYS: 220, MXP: 230}
     lift_pass:
       pass_name: Chamonix Le Pass
       days: 6
@@ -371,7 +371,7 @@ resorts:
     coords: [45.8567, 6.6175]
     lodging_bbox: [45.82, 6.57, 45.89, 6.66]     # Megève, Demi-Quartier, Praz-sur-Arly
     season: {from: 2026-12-12, to: 2027-04-04}   # не ледник: подъёмники работают только в сезон
-    airports: {GVA: 70, TRN: 180, LYS: 190}
+    airports: {GVA: 70, TRN: 180, LYS: 190, MXP: 260}
     lift_pass:
       pass_name: Evasion Mont-Blanc
       days: 6
@@ -394,7 +394,7 @@ resorts:
     season: {from: 2026-12-12, to: 2027-04-24}   # guide-ski.fr, skiinfo.fr
     bases:
       - {id: aime, name: "Aime", hotel_query: "Aime-la-Plagne", lodging_bbox: [45.54, 6.63, 45.57, 6.67], km: 18, note: ""}
-    airports: {CMF: 120, GVA: 190, LYS: 200, TRN: 230}
+    airports: {CMF: 120, GVA: 190, LYS: 200, TRN: 230, MXP: 340}
     lift_pass:
       pass_name: La Plagne (without Paradiski)
       days: 6
