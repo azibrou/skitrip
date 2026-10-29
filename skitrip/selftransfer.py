@@ -102,10 +102,10 @@ def search_week(origin: str, out: dt.date, ret: dt.date, dests: set[str], party:
         p_back, b1, b2 = best_back
         results[dest] = {
             "price": round((p_out + p_back) * n, 2),
-            "airlines": f"Ryanair, 2 билета через {o1['to']}/{b1['to']} — самостоятельная пересадка",
+            "airlines": f"Ryanair, 2 tickets via {o1['to']}/{b1['to']}, self-transfer",
             "stops": 1,
             "url": "https://www.ryanair.com/",
-            "detail": f"туда: {_pair_str(o1, o2)}; обратно: {_pair_str(b1, b2)}",
+            "detail": f"out: {_pair_str(o1, o2)}; back: {_pair_str(b1, b2)}",
         }
     return results
 
@@ -178,9 +178,9 @@ def search_hub_week(origin: str, hub: str, out: dt.date, ret: dt.date, dests: li
         airlines = sorted({x["airline"] for x in (p_out[1], p_out[2], p_back[1], p_back[2]) if x.get("airline")})
         results[d] = {
             "price": round(p_out[0] + p_back[0], 2),
-            "airlines": f"{', '.join(airlines)} — 2 билета через {hub}, самостоятельная пересадка",
+            "airlines": f"{', '.join(airlines)} — 2 tickets via {hub}, self-transfer",
             "stops": 1,
             "url": f"https://www.google.com/travel/flights?q=" + urllib.parse.quote(f"one way flights from {hub} to {d} on {out}"),
-            "detail": f"туда: {_leg_str(p_out[1])}, {_leg_str(p_out[2])}; обратно: {_leg_str(p_back[1])}, {_leg_str(p_back[2])}",
+            "detail": f"out: {_leg_str(p_out[1])}, {_leg_str(p_out[2])}; back: {_leg_str(p_back[1])}, {_leg_str(p_back[2])}",
         }
     return results

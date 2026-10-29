@@ -91,7 +91,7 @@ def fetch_roundtrip(origin: str, dest: str, out: dt.date, ret: dt.date, party: d
     if not back:
         return None
     airlines = list(dict.fromkeys(there["airlines"] + back["airlines"]))
-    return {"price": there["price"] + back["price"], "airlines": ", ".join(airlines) + " (2 × в одну сторону)",
+    return {"price": there["price"] + back["price"], "airlines": ", ".join(airlines) + " (2 one-ways)",
             "stops": max(there["legs"], back["legs"]) - 1, "url": url}
 
 

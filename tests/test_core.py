@@ -94,7 +94,7 @@ def test_plan_marks_missing():
     cfg = load_config()
     wk = D(2027, 1, 9)
     [o] = plan.build(cfg, [R["tignes"]], [wk], {}, {}, {})
-    assert o["total"] is None and o["missing"] == ["перелёт", "жильё"]
+    assert o["total"] is None and o["missing"] == ["flight", "lodging"]
 
 
 def test_pass_adults_only():
@@ -158,7 +158,7 @@ def test_two_families_lodging_and_passes():
     [one] = plan.build(cfg, [R["kaprun"]], [wk], fl, {("kaprun", str(wk)): rows}, {}, families=1)
     [two] = plan.build(cfg, [R["kaprun"]], [wk], fl, {("kaprun", str(wk)): rows}, {}, families=2)
     assert one["lodging_price"] == 950 and "Google" in one["lodging_kind"]
-    assert two["lodging_price"] == 1700 and "на всех" in two["lodging_kind"]      # < 2×950, < 2×1000
+    assert two["lodging_price"] == 1700 and "for everyone" in two["lodging_kind"]      # < 2×950, < 2×1000
     assert two["air"]["price"] == 1200 and two["passes"].total == 2 * one["passes"].total
 
 
@@ -185,6 +185,6 @@ def test_closed_season_has_no_total():
     fl = {("GVA", str(wk)): [{"price": 300, "origin": "TLL", "url": "x"}]}
     rows = [{"kind": "ghotel", "guests": "2+0", "p25": 700, "min": 600, "n": 9, "top": [], "search_url": "x"}]
     [o] = plan.build(cfg, [R["megeve"]], [wk], fl, {("megeve", str(wk)): rows}, {})
-    assert o["total"] is None and "закрыт" in o["missing"][0]
+    assert o["total"] is None and "closed" in o["missing"][0]
     [b] = plan.build(cfg, [R["laplagne@aime"]], [wk], fl, {("laplagne@aime", str(wk)): rows}, {})
     assert b["total"] is None

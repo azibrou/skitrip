@@ -34,7 +34,7 @@ def child_price(lp: dict, period: dict, birth: dt.date, first_ski_day: dt.date) 
             continue
         price = period["child"] if tier["price"] == "child" else float(tier["price"])
         return price, tier.get("note", "")
-    return period["adult"], "взрослый тариф"
+    return period["adult"], "adult rate"
 
 
 def pass_party(cfg: dict) -> dict:
@@ -52,13 +52,13 @@ def party_pass_cost(resort: dict, party: dict, first_ski_day: dt.date) -> PassQu
     for ch in party.get("children", []):
         price, note = child_price(lp, period, ch["birth_date"], first_ski_day)
         age = age_on(ch["birth_date"], first_ski_day)
-        lines.append(f"ребёнок {age} л.: {price:.0f} € ({note})" if note else f"ребёнок {age} л.: {price:.0f} €")
+        lines.append(f"child {age}: €{price:.0f} ({note})" if note else f"child {age}: €{price:.0f}")
         total += price
         paying_kids += price > 0 and price >= period["child"] * 0.5
     adult = period["adult"]
     if lp.get("family_flex") and paying_kids >= 1 and party["adults"] <= 2:
         adult = period["child"]
-        lines.append("Family Flex: взрослые по детскому тарифу")
+        lines.append("Family Flex: adults at child rate")
     total += adult * party["adults"]
-    lines.insert(0, f"{party['adults']} × взрослый {adult:.0f} €")
+    lines.insert(0, f"{party['adults']} × adult €{adult:.0f}")
     return PassQuote(round(total, 2), period["name"], lines, lp.get("status", ""))

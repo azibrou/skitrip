@@ -56,7 +56,7 @@ def fetch_roundtrip(origin: str, dest: str, out: dt.date, ret: dt.date, party: d
     n = party["adults"] + len(party.get("children", []))
     return {
         "price": round((there + back) * n, 2),
-        "airlines": "Ryanair (напрямую, без багажа)",
+        "airlines": "Ryanair (direct, no bags)",
         "stops": 0,
         "url": f"https://www.ryanair.com/gb/en/trip/flights/select?adults={party['adults']}&children={n - party['adults']}"
                f"&dateOut={out}&dateIn={ret}&originIata={origin}&destinationIata={dest}&isReturn=true",

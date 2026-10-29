@@ -35,12 +35,12 @@ def scenarios(cfg: dict) -> list[dict]:
             pp = {**party, "children": party["children"] if cfg["trip"].get("pass_children", True) else []}
             units = 1
             key = sc.get("key") or f"a{sc['adults']}c{len(party['children'])}"
-            label = sc.get("label") or f"{sc['adults']} взр."
+            label = sc.get("label") or f"{sc['adults']} adults"
         else:
             f = sc["families"]
             party, pp, units = scaled_party(cfg["party"], f), scaled_party(pass_party(cfg), f), f
             key = sc.get("key") or f"f{f}"
-            label = sc.get("label") or ("1 семья" if f == 1 else f"{f} семьи")
+            label = sc.get("label") or ("1 family" if f == 1 else f"{f} families")
         base = cfg["party"]["adults"] + len(cfg["party"].get("children", []))
         seats = party["adults"] + len(party["children"])
         out.append({"key": key, "label": label, "party": party, "pass_party": pp, "units": units,
@@ -57,7 +57,7 @@ def lodging_choice(rows, cfg: dict, families: int):
     stat = cfg["lodging"]["stat"]
     g1, gf = gkey(cfg["party"]), gkey(scaled_party(cfg["party"], families))
     rows = [rows] if isinstance(rows, dict) else (rows or [])
-    many = f", {families} шт." if families > 1 else ""
+    many = f" × {families}" if families > 1 else ""
     cands = []
     for row in rows:
         price = row.get(stat)
@@ -65,13 +65,13 @@ def lodging_choice(rows, cfg: dict, families: int):
             continue
         kind, guests = row.get("kind") or "entire", row.get("guests") or g1
         if kind == "entire" and guests == gf:
-            cands.append((price, row, "квартира/дом целиком" + (" на всех" if families > 1 else "")))
+            cands.append((price, row, "entire home" + (" for everyone" if families > 1 else "")))
         elif kind == "entire" and guests == g1 and families > 1:
-            cands.append((price * families, row, f"квартиры для каждой семьи{many}"))
+            cands.append((price * families, row, f"a home per family{many}"))
         elif kind == "hotel" and guests == g1:
-            cands.append((price * families, row, f"номер в отеле, Airbnb{many}"))
+            cands.append((price * families, row, f"hotel room, Airbnb{many}"))
         elif kind == "ghotel":
-            cands.append((price * families, row, f"отель, Google Hotels — цена номера на 2 взрослых{many}"))
+            cands.append((price * families, row, f"hotel, Google Hotels — room for 2 adults{many}"))
     return min(cands, key=lambda c: c[0]) if cands else (None, None, None)
 
 
@@ -112,11 +112,11 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
             missing = []
             season = r.get("season") or {}
             if season_closed(r, first_ski, cfg):
-                missing.append(f"курорт закрыт (сезон {season['from']:%d.%m}–{season['to']:%d.%m})")
+                missing.append(f"resort closed (season {season['from']:%d.%m}–{season['to']:%d.%m})")
             if best_air is None:
-                missing.append("перелёт")
+                missing.append("flight")
             if lodging_price is None:
-                missing.append("жильё")
+                missing.append("lodging")
             total = None
             if not missing:
                 total = round(best_air["air_and_car"] + lodging_price + passes.total + bags, 2)
