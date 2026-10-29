@@ -1,4 +1,4 @@
-# Ледниковые курорты IT / FR / AT.
+# Ледниковые курорты IT / FR / AT + Zermatt (CH). bases — соседние посёлки для жилья с тем же пассом.
 #
 # lift_pass — цена ски-пасса на `days` дней, по периодам сезона.
 #   periods: первый период, в который попадает дата первого ски-дня; иначе default.
@@ -20,6 +20,8 @@ resorts:
     glacier: Rettenbach / Tiefenbach
     coords: [46.9655, 11.0076]
     lodging_bbox: [46.93, 10.97, 47.00, 11.04]
+    bases:
+      - {id: laengenfeld, name: "Längenfeld", lodging_bbox: [47.04, 10.93, 47.10, 11.00], km: 15, note: "Ötztal Superskipass, скибас до Sölden"}
     airports: {INN: 87, FMM: 200, MUC: 250, VRN: 270, BGY: 300}
     lift_pass:
       pass_name: Ötztal Superskipass
@@ -61,6 +63,8 @@ resorts:
     glacier: Stubaier Gletscher
     coords: [46.9946, 11.1186]
     lodging_bbox: [46.98, 11.10, 47.13, 11.36]
+    bases:
+      - {id: innsbruck, name: "Innsbruck", lodging_bbox: [47.24, 11.35, 47.29, 11.43], km: 40, note: "бесплатный скибас Stubai"}
     airports: {INN: 45, MUC: 175, FMM: 230, VRN: 290}
     lift_pass:
       pass_name: Stubai Skipass
@@ -117,7 +121,9 @@ resorts:
     top_m: 3029
     glacier: Kitzsteinhorn
     coords: [47.2720, 12.7600]
-    lodging_bbox: [47.25, 12.70, 47.34, 12.82]
+    lodging_bbox: [47.24, 12.70, 47.29, 12.78]   # только Kaprun; Zell am See — отдельная база
+    bases:
+      - {id: zell, name: "Zell am See", lodging_bbox: [47.29, 12.75, 47.36, 12.83], km: 10, note: "Alpin Card действует и на Schmittenhöhe"}
     airports: {SZG: 100, MUC: 200, INN: 150}
     lift_pass:
       pass_name: Alpin Card
@@ -178,6 +184,8 @@ resorts:
     glacier: Grande Motte
     coords: [45.4680, 6.9060]
     lodging_bbox: [45.43, 6.87, 45.50, 7.02]
+    bases:
+      - {id: bsm, name: "Bourg-Saint-Maurice", lodging_bbox: [45.60, 6.74, 45.64, 6.79], km: 30, note: ""}
     airports: {GVA: 220, LYS: 230, CMF: 160, TRN: 220}
     lift_pass:
       pass_name: Tignes – Val d'Isère 6=7
@@ -197,6 +205,8 @@ resorts:
     glacier: Péclet
     coords: [45.2980, 6.5800]
     lodging_bbox: [45.28, 6.56, 45.32, 6.60]
+    bases:
+      - {id: menuires, name: "Les Menuires / St-Martin", lodging_bbox: [45.29, 6.50, 45.36, 6.56], km: 10, note: "пасс Val Thorens; на Les Menuires нужен 3 Vallées"}
     airports: {GVA: 200, LYS: 200, CMF: 140, TRN: 220}
     lift_pass:
       pass_name: Val Thorens – Orelle
@@ -218,6 +228,8 @@ resorts:
     glacier: Mont-de-Lans
     coords: [45.0060, 6.1220]
     lodging_bbox: [44.99, 6.10, 45.03, 6.15]
+    bases:
+      - {id: bourg, name: "Bourg-d'Oisans", lodging_bbox: [45.03, 6.00, 45.08, 6.06], km: 25, note: ""}
     airports: {GNB: 110, LYS: 170, GVA: 230, TRN: 230}
     lift_pass:
       pass_name: Les 2 Alpes
@@ -237,6 +249,8 @@ resorts:
     glacier: Sarenne / Pic Blanc
     coords: [45.0910, 6.0680]
     lodging_bbox: [45.07, 6.03, 45.11, 6.10]
+    bases:
+      - {id: bourg, name: "Bourg-d'Oisans", lodging_bbox: [45.03, 6.00, 45.08, 6.06], km: 13, note: "серпантин 21 поворот"}
     airports: {GNB: 100, LYS: 160, GVA: 220, TRN: 230}
     lift_pass:
       pass_name: Alpe d'Huez Grand Domaine
@@ -296,6 +310,8 @@ resorts:
     glacier: Ghiacciaio della Marmolada
     coords: [46.4380, 11.8640]
     lodging_bbox: [46.40, 11.83, 46.52, 11.93]   # Arabba, Malga Ciapela, Rocca Pietore
+    bases:
+      - {id: canazei, name: "Canazei / Campitello", lodging_bbox: [46.46, 11.73, 46.49, 11.79], km: 25, note: "Dolomiti Superski, через перевал Fedaia"}
     airports: {TSF: 140, VCE: 165, INN: 200, VRN: 230, BGY: 320, MUC: 320, MXP: 380}
     lift_pass:
       pass_name: Dolomiti Superski
@@ -337,6 +353,8 @@ resorts:
     glacier: Glacier de la Chiaupe (Bellecôte)
     coords: [45.5070, 6.6780]
     lodging_bbox: [45.48, 6.64, 45.56, 6.75]
+    bases:
+      - {id: aime, name: "Aime", lodging_bbox: [45.54, 6.63, 45.57, 6.67], km: 18, note: ""}
     airports: {CMF: 120, GVA: 190, LYS: 200, TRN: 230}
     lift_pass:
       pass_name: La Plagne (без Paradiski)
@@ -368,3 +386,24 @@ resorts:
       child_tiers:
         - {max_age: 8, price: child, note: "Bambini 0–8: 158 €"}
         - {max_age: 18, price: 221, note: "Junior 9–18"}
+
+  - id: zermatt
+    name: Zermatt
+    country: CH
+    top_m: 3883
+    glacier: Theodulgletscher / Klein Matterhorn
+    coords: [45.9380, 7.7300]
+    lodging_bbox: [46.00, 7.73, 46.04, 7.77]     # Zermatt (без машин)
+    airports: {MXP: 200, GVA: 240, ZRH: 240, BSL: 260}
+    bases:
+      - {id: taesch, name: "Täsch", lodging_bbox: [46.05, 7.76, 46.08, 7.79], km: 6, note: "дальше поезд-шаттл, машину оставляете в Täsch"}
+    lift_pass:
+      pass_name: Matterhorn ski paradise (швейцарская сторона)
+      days: 6
+      status: estimate
+      source: https://www.schneehoehen.de/skigebiete/preise/zermatt
+      periods: []
+      default: {name: "от CHF 376 (25/26) +3% ≈ €415; цены динамические", adult: 415.00, child: 208.00}
+      child_tiers:
+        - {max_age: 8, price: 0, note: "до 9 лет бесплатно (Wolli-Card)"}
+        - {max_age: 15, price: child, note: "9–15 — оценка 50%"}

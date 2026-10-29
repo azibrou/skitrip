@@ -31,7 +31,7 @@ def _sleep(rng):
 def select(args, cfg):
     resorts = [r for r in load_resorts() if r["top_m"] >= cfg["trip"].get("min_top_m", 0)]
     if args.resorts:
-        resorts = [r for r in resorts if r["id"] in args.resorts]
+        resorts = [r for r in resorts if r["id"] in args.resorts or r.get("base_of") in args.resorts]
     weeks = checkin_dates(cfg)
     if getattr(args, "start", None):
         weeks = [w for w in weeks if w >= dt.date.fromisoformat(args.start)]
@@ -62,6 +62,8 @@ def cmd_run(args, cfg):
     if not args.skip_snow:
         from . import snow
         for r in resorts:
+            if r.get("base_of"):  # снег тот же, что у ледника
+                continue
             try:
                 st.add_snow(r["id"], snow.fetch(r))
             except Exception as ex:  # сеть, лимиты

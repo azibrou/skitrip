@@ -139,3 +139,10 @@ def test_hub_pair_needs_time_to_change():
     late = {"dep": T(2027, 2, 6, 17, 45), "arr": T(2027, 2, 6, 19, 55), "price": 215}
     p, a, b = selftransfer._best_pair([leg1], [early, late], 3)
     assert p == 284 and b is late
+
+
+def test_bases_expand_with_same_pass():
+    rs = {r["id"]: r for r in load_resorts()}
+    zell = rs["kaprun@zell"]
+    assert zell["base_of"] == "kaprun" and zell["lift_pass"] is rs["kaprun"]["lift_pass"]
+    assert zell["lodging_bbox"] != rs["kaprun"]["lodging_bbox"] and zell["base_km"] == 10

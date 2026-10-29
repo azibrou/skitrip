@@ -88,6 +88,7 @@ def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list[d
         cards.append(f"""
 <article class="card">
   <header><span class="rank">{i}</span><div><h3>{e(r['name'])}</h3>
+  {f'<p class="sub">жильё в {e(r["base_name"])}, ~{r["base_km"]} км до подъёмника{". " + e(r["base_note"]) if r.get("base_note") else ""}</p>' if r.get("base_of") else ""}
   <p class="sub">{dshort(o['week'])} – {dshort(o['check_out'])} · {f"вылет {e(a['airport'])}, {a['hours']} ч до курорта" if a else "без перелёта"}</p></div>
   <div class="tot">{eur(score(o, full))}</div></header>
   <dl>
@@ -101,7 +102,7 @@ def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list[d
 </article>""")
 
     ref = []
-    for r in resorts:
+    for r in [x for x in resorts if not x.get("base_of")]:
         lp = r["lift_pass"]
         st, cls = STATUS.get(lp.get("status"), (lp.get("status", ""), "warn"))
         o = next((x for x in options if x["resort"]["id"] == r["id"]), None)

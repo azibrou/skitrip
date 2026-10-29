@@ -64,7 +64,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
             options.append({
                 "resort": r, "week": wk, "check_out": wk + dt.timedelta(days=nights),
                 "passes": passes, "air": best_air, "lodging": lg, "lodging_price": lodging_price,
-                "bags": bags, "total": total, "ground": ground, "missing": missing, "snow": snow.get(r["id"]),
+                "bags": bags, "total": total, "ground": ground, "missing": missing, "snow": snow.get(r.get("base_of", r["id"])),
                 "few_lodging": bool(lg) and lg["n"] < cfg["lodging"]["min_results"],
             })
     return options

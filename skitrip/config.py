@@ -22,7 +22,15 @@ def load_config(path: str | Path | None = None) -> dict:
 
 
 def load_resorts(path: str | Path | None = None) -> list[dict]:
-    return _load(Path(path) if path else ROOT / "resorts.yaml")["resorts"]
+    """Курорты; каждая запись из `bases` становится отдельным вариантом «ледник + жильё в соседнем посёлке»."""
+    out = []
+    for r in _load(Path(path) if path else ROOT / "resorts.yaml")["resorts"]:
+        out.append(r)
+        for b in r.get("bases") or []:
+            out.append({**r, "id": f"{r['id']}@{b['id']}", "name": f"{r['name']} · жильё в {b['name']}",
+                        "lodging_bbox": b["lodging_bbox"], "base_of": r["id"], "base_name": b["name"],
+                        "base_km": b["km"], "base_note": b.get("note", ""), "bases": []})
+    return out
 
 
 def checkin_dates(cfg: dict) -> list[dt.date]:
