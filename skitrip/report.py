@@ -187,6 +187,7 @@ a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-und
 :focus-visible{outline:2px solid var(--rule);outline-offset:2px}
 p{margin:0}.meta{margin:14px 0 0}.cap{margin:12px 0 0;font-size:14px}.note{margin:12px 0 0}
 .lede{font-size:17px;margin:4px 0 0}
+.foot{margin:56px 0 0;padding-top:12px;border-top:1px solid var(--rule);font-size:13px;max-width:760px}
 .top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:baseline;justify-content:space-between}
 .bar{margin:18px 0 0;display:flex;flex-wrap:wrap;gap:8px 48px}
 .tog{display:flex;flex-wrap:wrap;gap:4px 20px}
@@ -301,5 +302,6 @@ def render(cfg: dict, resorts: list[dict], weeks: list[dt.date], options, demo: 
 <button class="theme" role="switch" aria-checked="false" aria-label="Dark theme"><span class="sw"></span><i>dark</i></button></div>
 <div class="bar">{toggle}</div>
 {sections}
+<footer class="foot"><p>Prices are indicative. They are collected automatically from Google Flights, Google Hotels, Airbnb and Ryanair, change all the time and may be wrong — always check before booking. This page is not affiliated with any of these services, airlines, resorts or lift companies.</p></footer>
 </main>
 <script>{SCRIPT}</script></body></html>"""
