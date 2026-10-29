@@ -102,3 +102,29 @@ def test_pass_adults_only():
     cfg["trip"]["pass_children"] = False
     [o] = plan.build(cfg, [R["kaprun"]], [D(2027, 1, 9)], {}, {}, {})
     assert o["passes"].total == 2 * 440
+
+
+def test_plan_adds_bus_cost_for_riga():
+    cfg = load_config()
+    cfg["trip"]["origins"] = {"TLL": 0, "RIX": 150}
+    wk = D(2027, 1, 9)
+    lodg = {("cervinia", str(wk)): {"n": 20, "min": 900, "p25": 1100, "median": 1400, "top": [], "search_url": "z"}}
+    quotes = [{"origin": "TLL", "price": 600, "url": "a"}, {"origin": "RIX", "price": 400, "url": "b"}]
+    [o] = plan.build(cfg, [R["cervinia"]], [wk], {("TRN", str(wk)): quotes}, lodg, {})
+    assert o["air"]["origin"] == "RIX" and o["air"]["ground"] == 150   # 400 + 150 < 600
+    quotes[1]["price"] = 500
+    [o] = plan.build(cfg, [R["cervinia"]], [wk], {("TRN", str(wk)): quotes}, lodg, {})
+    assert o["air"]["origin"] == "TLL"                                   # 500 + 150 > 600
+
+
+def test_self_transfer_same_day_only(monkeypatch):
+    import datetime as _dt
+    from skitrip import selftransfer
+    calls = []
+    monkeypatch.setattr(selftransfer, "_fares", lambda *a, **k: calls.append(a) or [])
+    T = _dt.datetime
+    late = {"to": "AGP", "dep": T(2027, 2, 6, 21, 0), "arr": T(2027, 2, 7, 0, 40)}
+    assert selftransfer._connect(late, None, "EUR", 3) == [] and not calls
+    ok = {"to": "STN", "dep": T(2027, 2, 6, 8, 0), "arr": T(2027, 2, 6, 9, 0)}
+    selftransfer._connect(ok, None, "EUR", 3)
+    assert calls and calls[0][2] == "12:00"

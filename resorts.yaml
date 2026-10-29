@@ -20,7 +20,7 @@ resorts:
     glacier: Rettenbach / Tiefenbach
     coords: [46.9655, 11.0076]
     lodging_bbox: [46.93, 10.97, 47.00, 11.04]
-    airports: {INN: 87, MUC: 250, VRN: 270, BGY: 300}
+    airports: {INN: 87, FMM: 200, MUC: 250, VRN: 270, BGY: 300}
     lift_pass:
       pass_name: Ötztal Superskipass
       days: 6
@@ -61,7 +61,7 @@ resorts:
     glacier: Stubaier Gletscher
     coords: [46.9946, 11.1186]
     lodging_bbox: [46.98, 11.10, 47.13, 11.36]
-    airports: {INN: 45, MUC: 175, VRN: 290}
+    airports: {INN: 45, MUC: 175, FMM: 230, VRN: 290}
     lift_pass:
       pass_name: Stubai Skipass
       days: 6
@@ -80,7 +80,7 @@ resorts:
     glacier: Pitztaler Gletscher
     coords: [46.9960, 10.8590]
     lodging_bbox: [46.97, 10.80, 47.10, 10.90]
-    airports: {INN: 85, MUC: 245, BGY: 290}
+    airports: {INN: 85, FMM: 165, MUC: 245, BGY: 290}
     lift_pass:
       pass_name: Pitztaler Gletscher & Rifflsee
       days: 6
@@ -99,7 +99,7 @@ resorts:
     glacier: Kaunertaler Gletscher
     coords: [46.8710, 10.7140]
     lodging_bbox: [46.95, 10.65, 47.12, 10.80]
-    airports: {INN: 100, MUC: 260, BGY: 280}
+    airports: {INN: 100, FMM: 175, MUC: 260, BGY: 280}
     lift_pass:
       pass_name: Kaunertaler Gletscher
       days: 6

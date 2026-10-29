@@ -24,16 +24,23 @@ class Store:
         self.db = sqlite3.connect(path)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
+        cols = {r[1] for r in self.db.execute("PRAGMA table_info(flights)")}
+        if "source" not in cols:  # google | self (самостоятельная пересадка); detail — расписание
+            self.db.execute("ALTER TABLE flights ADD COLUMN source TEXT")
+            self.db.execute("ALTER TABLE flights ADD COLUMN detail TEXT")
+            self.db.commit()
 
     @staticmethod
     def now() -> str:
         return dt.datetime.now().isoformat(timespec="seconds")
 
-    def add_flight(self, origin, dest, out, ret, q: dict | None):
+    def add_flight(self, origin, dest, out, ret, q: dict | None, source: str = "google"):
         q = q or {}
         self.db.execute(
-            "INSERT INTO flights VALUES (?,?,?,?,?,?,?,?,?)",
-            (self.now(), origin, dest, str(out), str(ret), q.get("price"), q.get("airlines"), q.get("stops"), q.get("url")),
+            "INSERT INTO flights (scanned_at, origin, dest, out_date, ret_date, price, airlines, stops, url, source, detail)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (self.now(), origin, dest, str(out), str(ret), q.get("price"), q.get("airlines"), q.get("stops"),
+             q.get("url"), source, q.get("detail")),
         )
         self.db.commit()
 
@@ -52,11 +59,17 @@ class Store:
 
     # --- последние значения ---
     def latest_flights(self) -> dict:
+        """{(аэропорт, дата вылета): [последняя цена по каждому городу вылета и источнику]}."""
         rows = self.db.execute("""
           SELECT f.* FROM flights f JOIN (
-            SELECT dest, out_date, ret_date, MAX(scanned_at) m FROM flights GROUP BY dest, out_date, ret_date
-          ) l ON f.dest=l.dest AND f.out_date=l.out_date AND f.ret_date=l.ret_date AND f.scanned_at=l.m""").fetchall()
-        return {(r["dest"], r["out_date"]): dict(r) for r in rows}
+            SELECT origin, dest, out_date, ret_date, COALESCE(source,'google') s, MAX(scanned_at) m
+            FROM flights GROUP BY origin, dest, out_date, ret_date, s
+          ) l ON f.origin=l.origin AND f.dest=l.dest AND f.out_date=l.out_date AND f.ret_date=l.ret_date
+             AND COALESCE(f.source,'google')=l.s AND f.scanned_at=l.m""").fetchall()
+        out: dict = {}
+        for r in rows:
+            out.setdefault((r["dest"], r["out_date"]), []).append(dict(r))
+        return out
 
     def flight_history(self, dest, out_date) -> list[float]:
         rows = self.db.execute(

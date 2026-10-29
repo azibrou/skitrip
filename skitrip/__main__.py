@@ -70,29 +70,48 @@ def cmd_run(args, cfg):
     if not args.skip_flights:
         from . import flights
         airports = sorted({a for r in resorts for a in r["airports"]})
-        jobs = [(a, w) for w in weeks for a in airports]
+        origins = args.origins or list(plan.origins(cfg))
+        jobs = [(o, a, w) for o in origins for w in weeks for a in airports]
         if args.limit:
             jobs = jobs[: args.limit]
         errors, prev = 0, st.latest_flights()
-        for i, (a, w) in enumerate(jobs, 1):
+        for i, (o, a, w) in enumerate(jobs, 1):
             ret = w + dt.timedelta(days=nights)
             try:
-                q = flights.fetch_best(cfg["trip"]["origin"], a, w, ret, party, cfg)
+                q = flights.fetch_best(o, a, w, ret, party, cfg)
                 errors = 0
             except Exception as ex:
                 errors += 1
-                print(f"[{i}/{len(jobs)}] {a} {w}: ошибка {ex}", file=sys.stderr)
+                print(f"[{i}/{len(jobs)}] {o}⇄{a} {w}: ошибка {ex}", file=sys.stderr)
                 if errors >= cfg["flights"]["max_consecutive_errors"]:
                     print("Подряд слишком много ошибок — похоже на блокировку Google. Останавливаю перелёты.", file=sys.stderr)
                     break
                 continue
-            st.add_flight(cfg["trip"]["origin"], a, w, ret, q)
-            old = prev.get((a, str(w)))
+            st.add_flight(o, a, w, ret, q)
+            old = next((x for x in prev.get((a, str(w)), [])
+                        if x["origin"] == o and (x.get("source") or "google") == "google"), None)
             msg = f"{q['price']:.0f} €" if q else "нет рейсов"
             if q and old and old.get("price") and q["price"] <= old["price"] * (1 - cfg["alerts"]["drop_pct"] / 100):
                 msg += f"  ↓ было {old['price']:.0f} €"
-            print(f"[{i}/{len(jobs)}] TLL⇄{a} {w}: {msg}")
+            print(f"[{i}/{len(jobs)}] {o}⇄{a} {w}: {msg}")
             _sleep(cfg["flights"]["delay_s"])
+
+    if not args.skip_self and cfg.get("self_transfer", {}).get("enabled"):
+        from . import selftransfer
+        airports = {a for r in resorts for a in r["airports"]}
+        origins = args.origins or list(plan.origins(cfg))
+        jobs = [(o, w) for o in origins for w in weeks]
+        for i, (o, w) in enumerate(jobs, 1):
+            ret = w + dt.timedelta(days=nights)
+            try:
+                found = selftransfer.search_week(o, w, ret, airports, party, cfg)
+            except Exception as ex:
+                print(f"[{i}/{len(jobs)}] пересадки {o} {w}: ошибка {ex}", file=sys.stderr)
+                continue
+            for a in sorted(airports):
+                st.add_flight(o, a, w, ret, found.get(a), source="self")
+            best = ", ".join(f"{a} {q['price']:.0f} €" for a, q in sorted(found.items(), key=lambda x: x[1]["price"])[:4])
+            print(f"[{i}/{len(jobs)}] пересадки {o} {w}: {len(found)} аэропортов. {best}")
 
     if not args.skip_lodging:
         from . import lodging
@@ -126,7 +145,7 @@ def cmd_report(args, cfg, demo_data=None):
     best = plan.ranked(opts)[:5]
     print(f"\nОтчёт: {out}")
     for o in best:
-        via = f"через {o['air']['airport']}" if o["air"] else "без перелёта"
+        via = f"{o['air']['origin']}⇄{o['air']['airport']}" if o["air"] else "без перелёта"
         print(f"  {plan.score(o, plan.has_flights(opts)):8.0f} €  {o['resort']['name']:<26} {o['week']}  {via}")
     if args.open:
         webbrowser.open(out.as_uri())
@@ -176,6 +195,8 @@ def main(argv=None):
             p.add_argument("--skip-flights", action="store_true")
             p.add_argument("--skip-lodging", action="store_true")
             p.add_argument("--skip-snow", action="store_true")
+            p.add_argument("--skip-self", action="store_true", help="без поиска самостоятельных пересадок")
+            p.add_argument("--origins", nargs="*", help="города вылета, по умолчанию все из config.yaml")
     args = ap.parse_args(argv)
     cfg = load_config(args.config)
     if args.cmd == "passes":

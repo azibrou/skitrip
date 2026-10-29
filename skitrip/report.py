@@ -5,7 +5,7 @@ import datetime as dt
 import html
 
 from .passes import age_on
-from .plan import transfer_cost, has_flights, ranked, score
+from .plan import origins, transfer_cost, has_flights, ranked, score
 
 STATUS = {
     "verified_2026_27": ("цены 26/27", "ok"),
@@ -38,8 +38,13 @@ def heat_color(v, lo, hi) -> str:
 
 def air_rows(a, r, cfg) -> str:
     if a:
-        return (f'<dt>Перелёт TLL⇄{e(a["airport"])}</dt><dd><a href="{e(a["url"])}">{eur(a["price"])}</a> '
-                f'<span class="mut">{e(a.get("airlines") or "")}{", пересадок: " + str(a["stops"]) if a.get("stops") else ""}</span></dd>'
+        orig = a.get("origin") or cfg["trip"]["origin"]
+        detail = f'<br><span class="mut">{e(a["detail"])}</span>' if a.get("detail") else ""
+        ground = (f'<dt>Дорога до {e(orig)}</dt><dd>{eur(a["ground"])} <span class="mut">автобус из Таллина, на всех туда-обратно</span></dd>'
+                  if a.get("ground") else "")
+        return (f'<dt>Перелёт {e(orig)}⇄{e(a["airport"])}</dt><dd><a href="{e(a["url"])}">{eur(a["price"])}</a> '
+                f'<span class="mut">{e(a.get("airlines") or "")}{", пересадок: " + str(a["stops"]) if a.get("stops") else ""}</span>{detail}</dd>'
+                + ground
                 + (f'<dt>Машина + топливо</dt><dd>{eur(a["transfer"])} <span class="mut">{a["km"]} км в одну сторону</span></dd>' if a["transfer"]
                  else f'<dt>Дорога</dt><dd class="mut">{a["km"]} км от аэропорта, ~{a["hours"]} ч — не в сумме</dd>'))
     code, km = min(r["airports"].items(), key=lambda x: x[1])
@@ -140,7 +145,7 @@ table.ref{{border-collapse:collapse;width:100%;font-size:13px;background:var(--c
 .pill{{font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid currentColor}}.pill.ok{{color:var(--ok)}}.pill.warn{{color:var(--warn)}}
 </style></head><body><main>
 <h1>Горнолыжная поездка: полная стоимость</h1>
-<p class="sub">{party['adults']} взрослых + {kid_txt} · из {cfg['trip']['origin']} · {cfg['trip']['nights']} ночей, ски-пасс {cfg['trip']['ski_days']} дней · заполнено {filled} из {len(options)} вариантов · собрано {dt.datetime.now():%d.%m.%Y %H:%M}</p>
+<p class="sub">{party['adults']} взрослых + {kid_txt} · вылет из {', '.join(origins(cfg))} · {cfg['trip']['nights']} ночей, ски-пасс {cfg['trip']['ski_days']} дней · заполнено {filled} из {len(options)} вариантов · собрано {dt.datetime.now():%d.%m.%Y %H:%M}</p>
 {banner}
 <h2>Курорт × неделя заезда, тыс. €</h2>
 <div class="scroll"><table class="heat"><thead><tr><th></th>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table></div>

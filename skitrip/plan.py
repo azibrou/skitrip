@@ -6,6 +6,11 @@ import datetime as dt
 from .passes import party_pass_cost, pass_party
 
 
+def origins(cfg: dict) -> dict[str, float]:
+    """Города вылета → наземная дорога до аэропорта на всю группу."""
+    return cfg["trip"].get("origins") or {cfg["trip"]["origin"]: 0}
+
+
 def transfer_cost(km: float, cfg: dict) -> float:
     t = cfg["transfer"]
     return round(t["car_rent_week"] + 2 * km * t["per_km"], 2)
@@ -17,6 +22,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
     stat = cfg["lodging"]["stat"]
     n_people = party["adults"] + len(party.get("children", []))
     bags = cfg["costs"].get("ski_bag_per_person_rt", 0) * n_people
+    orig = origins(cfg)
     options = []
     for r in resorts:
         for wk in weeks:
@@ -25,13 +31,18 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
 
             best_air = None
             for code, km in r["airports"].items():
-                f = flights.get((code, str(wk)))
-                if not f or f.get("price") is None:
-                    continue
-                cost = f["price"] + transfer_cost(km, cfg)
-                if best_air is None or cost < best_air["air_and_car"]:
-                    best_air = {**f, "airport": code, "km": km, "hours": round(km / 70, 1),
-                                "transfer": transfer_cost(km, cfg), "air_and_car": round(cost, 2)}
+                quotes = flights.get((code, str(wk))) or []
+                for f in [quotes] if isinstance(quotes, dict) else quotes:
+                    if f.get("price") is None:
+                        continue
+                    origin = f.get("origin") or cfg["trip"]["origin"]
+                    if origin not in orig:
+                        continue
+                    cost = f["price"] + orig[origin] + transfer_cost(km, cfg)
+                    if best_air is None or cost < best_air["air_and_car"]:
+                        best_air = {**f, "origin": origin, "ground": orig[origin], "airport": code, "km": km,
+                                    "hours": round(km / 70, 1), "transfer": transfer_cost(km, cfg),
+                                    "air_and_car": round(cost, 2)}
 
             lg = lodging.get((r["id"], str(wk)))
             lodging_price = lg.get(stat) if lg else None

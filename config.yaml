@@ -4,7 +4,10 @@ party:
     - birth_date: 2020-06-01   # ← поставьте точную дату: от неё зависит, бесплатный ли ски-пасс (Австрия считает по году рождения)
 
 trip:
-  origin: TLL
+  origin: TLL                 # основной город вылета
+  origins:                    # откуда искать перелёты: код → наземная дорога до аэропорта на всю группу, EUR
+    TLL: 0
+    RIX: 150                  # автобус Таллин⇄Рига (Lux Express), 3 чел. туда-обратно, ~4,5 ч в одну сторону
   currency: EUR
   nights: 7
   ski_days: 6                 # длина ски-пасса
@@ -16,6 +19,10 @@ trip:
 
 flights:
   max_stops: 1
+
+self_transfer:                # два отдельных билета Ryanair через хаб, с повторной регистрацией
+  enabled: true
+  min_connection_h: 3         # запас между рейсами
   delay_s: [3, 7]             # пауза между запросами к Google
   max_consecutive_errors: 4
 
