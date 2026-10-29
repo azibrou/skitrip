@@ -146,3 +146,17 @@ def test_bases_expand_with_same_pass():
     zell = rs["kaprun@zell"]
     assert zell["base_of"] == "kaprun" and zell["lift_pass"] is rs["kaprun"]["lift_pass"]
     assert zell["lodging_bbox"] != rs["kaprun"]["lodging_bbox"] and zell["base_km"] == 10
+
+
+def test_two_families_lodging_and_passes():
+    cfg = load_config()
+    wk = D(2027, 1, 9)
+    rows = [{"kind": "entire", "guests": "2+1", "p25": 1000, "n": 20, "min": 900, "top": [], "search_url": ""},
+            {"kind": "entire", "guests": "4+2", "p25": 1700, "n": 10, "min": 1500, "top": [], "search_url": ""},
+            {"kind": "ghotel", "guests": "2+0", "p25": 950, "n": 15, "min": 700, "top": [], "search_url": ""}]
+    fl = {("INN", str(wk)): [{"origin": "TLL", "price": 600, "url": ""}]}
+    [one] = plan.build(cfg, [R["kaprun"]], [wk], fl, {("kaprun", str(wk)): rows}, {}, families=1)
+    [two] = plan.build(cfg, [R["kaprun"]], [wk], fl, {("kaprun", str(wk)): rows}, {}, families=2)
+    assert one["lodging_price"] == 950 and "Google" in one["lodging_kind"]
+    assert two["lodging_price"] == 1700 and "на всех" in two["lodging_kind"]      # < 2×950, < 2×1000
+    assert two["air"]["price"] == 1200 and two["passes"].total == 2 * one["passes"].total

@@ -55,22 +55,42 @@ def summarize(listings: list[dict], nights: int, top_n: int = 5) -> dict:
     }
 
 
-def search_url(resort: dict, check_in: dt.date, check_out: dt.date, party: dict) -> str:
+ROOM_TYPES = {"entire": "Entire%20home%2Fapt", "hotel": "Hotel%20room"}
+
+
+def guests_key(party: dict) -> str:
+    """'2+1' — взрослые + дети; так помечаются цены жилья в базе."""
+    return f"{party['adults']}+{len(party.get('children', []))}"
+
+
+def search_url(resort: dict, check_in: dt.date, check_out: dt.date, party: dict, kind: str = "entire",
+               min_bedrooms: int = 0) -> str:
     s, w, n, e = resort["lodging_bbox"]
     kids = len(party.get("children", []))
     return (
         "https://www.airbnb.com/s/homes?"
         f"checkin={check_in}&checkout={check_out}&adults={party['adults']}&children={kids}"
-        f"&ne_lat={n}&ne_lng={e}&sw_lat={s}&sw_lng={w}&search_by_map=true&room_types%5B%5D=Entire%20home%2Fapt"
+        f"&ne_lat={n}&ne_lng={e}&sw_lat={s}&sw_lng={w}&search_by_map=true&room_types%5B%5D={ROOM_TYPES[kind]}"
+        + (f"&min_bedrooms={min_bedrooms}" if min_bedrooms else "")
     )
 
 
-def fetch(resort: dict, check_in: dt.date, nights: int, party: dict, cfg: dict) -> dict:
+def fetch(resort: dict, check_in: dt.date, nights: int, party: dict, cfg: dict, kind: str = "entire",
+          min_bedrooms: int | None = None) -> dict:
+    """Airbnb: kind='entire' — жильё целиком, 'hotel' — номера отелей и апарт-отелей."""
     import pyairbnb
 
     s, w, n, e = resort["lodging_bbox"]
     check_out = check_in + dt.timedelta(days=nights)
     lc = cfg["lodging"]
+    if min_bedrooms is None:
+        min_bedrooms = lc.get("min_bedrooms", 0)
+    if kind == "hotel":
+        url = search_url(resort, check_in, check_out, party, "hotel")
+        listings = pyairbnb.search_all_from_url(url, currency=cfg["trip"]["currency"], language="en")
+        out = summarize(listings, nights)
+        out["search_url"] = url
+        return out
     listings = pyairbnb.search_all(
         check_in=check_in.isoformat(),
         check_out=check_out.isoformat(),
@@ -80,10 +100,64 @@ def fetch(resort: dict, check_in: dt.date, nights: int, party: dict, cfg: dict) 
         place_type=lc.get("place_type", ""),
         adults=party["adults"],
         children=len(party.get("children", [])),
-        min_bedrooms=lc.get("min_bedrooms", 0),
+        min_bedrooms=min_bedrooms,
         currency=cfg["trip"]["currency"],
         language="en",
     )
     out = summarize(listings, nights)
-    out["search_url"] = search_url(resort, check_in, check_out, party)
+    out["search_url"] = search_url(resort, check_in, check_out, party, "entire", min_bedrooms)
     return out
+
+
+# --- Google Hotels: отели и апартаменты с Booking и сайтов отелей ---
+
+def hotel_place(resort: dict) -> str:
+    return resort.get("base_name") or resort.get("hotel_query") or resort["name"].split(" /")[0].split(" (")[0].split(" –")[0]
+
+
+def google_hotels(resort: dict, check_in: dt.date, nights: int, cfg: dict, top_n: int = 5) -> dict:
+    """Цена за весь срок с налогами по каждому отелю в выдаче Google Hotels.
+
+    Google не учитывает число гостей из запроса: цены — за номер на 2 взрослых.
+    """
+    import re
+    import urllib.parse
+
+    from selectolax.lexbor import LexborHTMLParser
+
+    from .flights import CONSENT_COOKIE
+
+    from primp import Client
+
+    check_out = check_in + dt.timedelta(days=nights)
+    place = hotel_place(resort)
+    q = f"hotels in {place} from {check_in:%-d %B %Y} to {check_out:%-d %B %Y} for 2 adults"
+    client = Client(impersonate="chrome_145", impersonate_os="macos", referer=True, cookie_store=True)
+    html = client.get("https://www.google.com/travel/search",
+                      params={"q": q, "hl": "en-GB", "gl": "ee", "curr": cfg["trip"]["currency"]},
+                      headers={"Cookie": CONSENT_COOKIE}).text
+    page = LexborHTMLParser(html)
+    seen, rows = set(), []
+    for node in page.css("div.CQYfx.UDzrdc"):
+        m = re.search(r"([\d,]+)\s*total", node.text().replace("\xa0", " "))
+        card = node
+        for _ in range(12):
+            card = card.parent
+            if card is None or card.css("h2"):
+                break
+        if not m or card is None or not card.css("h2"):
+            continue
+        name = card.css("h2")[0].text().strip()
+        if name in seen:
+            continue
+        seen.add(name)
+        rows.append({"title": name, "total": float(m.group(1).replace(",", "")), "rating": 0,
+                     "url": "https://www.google.com/travel/search?q=" + urllib.parse.quote(f"{name} {place}")})
+    rows.sort(key=lambda r: r["total"])
+    url = "https://www.google.com/travel/search?q=" + urllib.parse.quote(q)
+    if not rows:
+        return {"n": 0, "min": None, "p25": None, "median": None, "top": [], "search_url": url}
+    prices = [r["total"] for r in rows]
+    p25 = prices[0] if len(prices) < 4 else statistics.quantiles(prices, n=4)[0]
+    return {"n": len(rows), "min": prices[0], "p25": round(p25, 2), "median": round(statistics.median(prices), 2),
+            "top": rows[:top_n], "search_url": url}

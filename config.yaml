@@ -27,8 +27,11 @@ self_transfer:                # два отдельных билета Ryanair �
   min_connection_h: 3         # запас между рейсами
   hubs: [WAW]                 # хабы для 2 отдельных билетов любых авиакомпаний (Google + Ryanair): город → хаб → прямой рейс
 
+scenarios: [1, 2]             # переключатель в отчёте: 1 семья (2+1) или 2 одинаковые семьи (4+2)
+
 lodging:
   source: airbnb
+  kinds: [entire, entire-big, hotel, ghotel]   # квартиры 2+1; квартиры на 2 семьи (≥2 спальни); отели Airbnb; Google Hotels
   place_type: "Entire home/apt"
   min_bedrooms: 1
   stat: p25                   # чем считать цену жилья: p25 | median | min

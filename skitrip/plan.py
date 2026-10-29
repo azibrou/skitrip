@@ -16,8 +16,41 @@ def transfer_cost(km: float, cfg: dict) -> float:
     return round(t["car_rent_week"] + 2 * km * t["per_km"], 2)
 
 
-def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, lodging: dict, snow: dict) -> list[dict]:
-    party = cfg["party"]
+def scaled_party(party: dict, families: int) -> dict:
+    """Несколько одинаковых семей: взрослые и дети умножаются."""
+    return {**party, "adults": party["adults"] * families, "children": list(party.get("children", [])) * families}
+
+
+def gkey(party: dict) -> str:
+    return f"{party['adults']}+{len(party.get('children', []))}"
+
+
+def lodging_choice(rows, cfg: dict, families: int):
+    """Самое дешёвое жильё на группу из families семей: (цена, сводка, что это)."""
+    stat = cfg["lodging"]["stat"]
+    g1, gf = gkey(cfg["party"]), gkey(scaled_party(cfg["party"], families))
+    rows = [rows] if isinstance(rows, dict) else (rows or [])
+    many = f", {families} шт." if families > 1 else ""
+    cands = []
+    for row in rows:
+        price = row.get(stat)
+        if price is None:
+            continue
+        kind, guests = row.get("kind") or "entire", row.get("guests") or g1
+        if kind == "entire" and guests == gf:
+            cands.append((price, row, "квартира/дом целиком" + (" на всех" if families > 1 else "")))
+        elif kind == "entire" and guests == g1 and families > 1:
+            cands.append((price * families, row, f"квартиры для каждой семьи{many}"))
+        elif kind == "hotel" and guests == g1:
+            cands.append((price * families, row, f"номер в отеле, Airbnb{many}"))
+        elif kind == "ghotel":
+            cands.append((price * families, row, f"отель, Google Hotels — цена номера на 2 взрослых{many}"))
+    return min(cands, key=lambda c: c[0]) if cands else (None, None, None)
+
+
+def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, lodging: dict, snow: dict,
+          families: int = 1) -> list[dict]:
+    party = scaled_party(cfg["party"], families)
     nights = cfg["trip"]["nights"]
     stat = cfg["lodging"]["stat"]
     n_people = party["adults"] + len(party.get("children", []))
@@ -27,7 +60,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
     for r in resorts:
         for wk in weeks:
             first_ski = wk + dt.timedelta(days=1)
-            passes = party_pass_cost(r, pass_party(cfg), first_ski)
+            passes = party_pass_cost(r, scaled_party(pass_party(cfg), families), first_ski)
 
             best_air = None
             for code, km in r["airports"].items():
@@ -38,14 +71,14 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
                     origin = f.get("origin") or cfg["trip"]["origin"]
                     if origin not in orig:
                         continue
-                    cost = f["price"] + orig[origin] + transfer_cost(km, cfg)
+                    # цена в базе — на одну семью; для нескольких семей умножаем (оценка)
+                    cost = f["price"] * families + orig[origin] + transfer_cost(km, cfg)
                     if best_air is None or cost < best_air["air_and_car"]:
-                        best_air = {**f, "origin": origin, "ground": orig[origin], "airport": code, "km": km,
+                        best_air = {**f, "price": f["price"] * families, "per_family": f["price"], "origin": origin, "ground": orig[origin], "airport": code, "km": km,
                                     "hours": round(km / 70, 1), "transfer": transfer_cost(km, cfg),
                                     "air_and_car": round(cost, 2)}
 
-            lg = lodging.get((r["id"], str(wk)))
-            lodging_price = lg.get(stat) if lg else None
+            lodging_price, lg, lodging_kind = lodging_choice(lodging.get((r["id"], str(wk))), cfg, families)
 
             missing = []
             if best_air is None:
@@ -66,6 +99,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
                 "passes": passes, "air": best_air, "lodging": lg, "lodging_price": lodging_price,
                 "bags": bags, "total": total, "ground": ground, "missing": missing, "snow": snow.get(r.get("base_of", r["id"])),
                 "few_lodging": bool(lg) and lg["n"] < cfg["lodging"]["min_results"],
+                "lodging_kind": lodging_kind, "families": families,
             })
     return options
 

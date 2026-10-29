@@ -148,18 +148,34 @@ def cmd_run(args, cfg):
 
     if not args.skip_lodging:
         from . import lodging
-        jobs = [(r, w) for r in resorts for w in weeks]
+        big = plan.scaled_party(party, max(cfg.get("scenarios") or [1]))
+        # тип жилья → (как искать, состав гостей)
+        kinds = {
+            "entire": (lambda r, w: lodging.fetch(r, w, nights, party, cfg), plan.gkey(party)),
+            "entire-big": (lambda r, w: lodging.fetch(r, w, nights, big, cfg, min_bedrooms=2), plan.gkey(big)),
+            "hotel": (lambda r, w: lodging.fetch(r, w, nights, party, cfg, kind="hotel"), plan.gkey(party)),
+            "ghotel": (lambda r, w: lodging.google_hotels(r, w, nights, cfg), "2+0"),
+        }
+        wanted = args.lodging_kinds or cfg["lodging"].get("kinds") or ["entire"]
+        done = set()
+        if args.skip_done:  # уже собранное сегодня не повторяем
+            today = dt.date.today().isoformat()
+            done = {(x["resort"], x["check_in"], x.get("kind") or "entire", x.get("guests") or plan.gkey(party))
+                    for rows in st.latest_lodging().values() for x in rows if x["scanned_at"] >= today}
+        jobs = [(k, r, w) for k in wanted for r in resorts for w in weeks
+                if (r["id"], str(w), "entire" if k == "entire-big" else k, kinds[k][1]) not in done]
         if args.limit:
             jobs = jobs[: args.limit]
-        for i, (r, w) in enumerate(jobs, 1):
+        for i, (k, r, w) in enumerate(jobs, 1):
+            fetch, guests = kinds[k]
             try:
-                s = lodging.fetch(r, w, nights, party, cfg)
+                s = fetch(r, w)
             except Exception as ex:
-                print(f"[{i}/{len(jobs)}] жильё {r['id']} {w}: ошибка {ex}", file=sys.stderr)
+                print(f"[{i}/{len(jobs)}] {k} {r['id']} {w}: ошибка {ex}", file=sys.stderr)
                 continue
-            st.add_lodging(r["id"], w, nights, s)
-            print(f"[{i}/{len(jobs)}] {r['name']} {w}: {s['n']} вариантов, p25 {s['p25']}, медиана {s['median']}")
-            _sleep(cfg["lodging"]["delay_s"])
+            st.add_lodging(r["id"], w, nights, s, kind="entire" if k == "entire-big" else k, guests=guests)
+            print(f"[{i}/{len(jobs)}] {k} {guests} {r['name']} {w}: {s['n']} вариантов, p25 {s['p25']}, медиана {s['median']}")
+            _sleep(cfg["lodging"]["delay_s"] if k != "ghotel" else cfg["flights"]["delay_s"])
 
     cmd_report(args, cfg)
 
@@ -171,10 +187,11 @@ def cmd_report(args, cfg, demo_data=None):
     else:
         st = Store(DB)
         flights, lodging, snow = st.latest_flights(), st.latest_lodging(), st.latest_snow()
-    opts = plan.build(cfg, resorts, weeks, flights, lodging, snow)
+    scen = {f: plan.build(cfg, resorts, weeks, flights, lodging, snow, families=f) for f in cfg.get("scenarios") or [1]}
+    opts = next(iter(scen.values()))
     OUT.parent.mkdir(exist_ok=True)
     out = OUT.with_name("report-demo.html") if demo_data else OUT
-    out.write_text(report.render(cfg, resorts, weeks, opts, demo=bool(demo_data)), encoding="utf-8")
+    out.write_text(report.render(cfg, resorts, weeks, scen, demo=bool(demo_data)), encoding="utf-8")
     best = plan.ranked(opts)[:5]
     print(f"\nОтчёт: {out}")
     for o in best:
@@ -200,7 +217,7 @@ def demo_data(cfg, resorts, weeks):
             flights[(a, str(w))] = {"price": price, "airlines": "demo", "stops": rnd.choice([0, 1]),
                                     "url": "https://www.google.com/travel/flights"}
     for r in resorts:
-        lvl = {"FR": 1.25, "IT": 0.95, "AT": 1.0}[r["country"]]
+        lvl = {"FR": 1.25, "IT": 0.95, "AT": 1.0, "CH": 1.5}.get(r["country"], 1.0)
         for w in weeks:
             p25 = round(1100 * lvl * peak(w) * rnd.uniform(0.85, 1.25))
             lodging[(r["id"], str(w))] = {
@@ -231,6 +248,9 @@ def main(argv=None):
             p.add_argument("--skip-self", action="store_true", help="без пересадок Ryanair через любые хабы")
             p.add_argument("--skip-hubs", action="store_true", help="без пересадок через хабы из self_transfer.hubs")
             p.add_argument("--origins", nargs="*", help="города вылета, по умолчанию все из config.yaml")
+            p.add_argument("--lodging-kinds", nargs="*", choices=["entire", "entire-big", "hotel", "ghotel"],
+                           help="типы жилья, по умолчанию lodging.kinds из config.yaml")
+            p.add_argument("--skip-done", action="store_true", help="не повторять жильё, уже собранное сегодня")
     args = ap.parse_args(argv)
     cfg = load_config(args.config)
     if args.cmd == "passes":

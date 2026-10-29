@@ -29,6 +29,11 @@ class Store:
             self.db.execute("ALTER TABLE flights ADD COLUMN source TEXT")
             self.db.execute("ALTER TABLE flights ADD COLUMN detail TEXT")
             self.db.commit()
+        cols = {r[1] for r in self.db.execute("PRAGMA table_info(lodging)")}
+        if "kind" not in cols:  # entire | hotel (Airbnb) | ghotel (Google Hotels); guests — '2+1'
+            self.db.execute("ALTER TABLE lodging ADD COLUMN kind TEXT")
+            self.db.execute("ALTER TABLE lodging ADD COLUMN guests TEXT")
+            self.db.commit()
 
     @staticmethod
     def now() -> str:
@@ -44,11 +49,12 @@ class Store:
         )
         self.db.commit()
 
-    def add_lodging(self, resort_id, check_in, nights, s: dict):
+    def add_lodging(self, resort_id, check_in, nights, s: dict, kind: str = "entire", guests: str | None = None):
         self.db.execute(
-            "INSERT INTO lodging VALUES (?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO lodging (scanned_at, resort, check_in, nights, n, min, p25, median, top_json, search_url, kind, guests)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (self.now(), resort_id, str(check_in), nights, s["n"], s["min"], s["p25"], s["median"],
-             json.dumps(s["top"], ensure_ascii=False), s.get("search_url")),
+             json.dumps(s["top"], ensure_ascii=False), s.get("search_url"), kind, guests),
         )
         self.db.commit()
 
@@ -78,15 +84,18 @@ class Store:
         return [r[0] for r in rows]
 
     def latest_lodging(self) -> dict:
+        """{(курорт, заезд): [последняя сводка по каждому типу жилья и составу гостей]}."""
         rows = self.db.execute("""
           SELECT g.* FROM lodging g JOIN (
-            SELECT resort, check_in, MAX(scanned_at) m FROM lodging GROUP BY resort, check_in
-          ) l ON g.resort=l.resort AND g.check_in=l.check_in AND g.scanned_at=l.m""").fetchall()
-        out = {}
+            SELECT resort, check_in, COALESCE(kind,'entire') k, COALESCE(guests,'') gu, MAX(scanned_at) m
+            FROM lodging GROUP BY resort, check_in, k, gu
+          ) l ON g.resort=l.resort AND g.check_in=l.check_in AND COALESCE(g.kind,'entire')=l.k
+             AND COALESCE(g.guests,'')=l.gu AND g.scanned_at=l.m""").fetchall()
+        out: dict = {}
         for r in rows:
             d = dict(r)
             d["top"] = json.loads(d.pop("top_json") or "[]")
-            out[(r["resort"], r["check_in"])] = d
+            out.setdefault((r["resort"], r["check_in"]), []).append(d)
         return out
 
     def latest_snow(self) -> dict:

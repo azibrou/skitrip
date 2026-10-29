@@ -15,6 +15,7 @@
 resorts:
   - id: soelden
     name: Sölden
+    hotel_query: "Sölden"
     country: AT
     top_m: 3340
     glacier: Rettenbach / Tiefenbach
@@ -39,6 +40,7 @@ resorts:
 
   - id: hintertux
     name: Hintertux (Zillertal)
+    hotel_query: "Hintertux"
     country: AT
     top_m: 3250
     glacier: Hintertuxer Gletscher
@@ -58,6 +60,7 @@ resorts:
 
   - id: stubai
     name: Stubaier Gletscher
+    hotel_query: "Neustift im Stubaital"
     country: AT
     top_m: 3210
     glacier: Stubaier Gletscher
@@ -79,6 +82,7 @@ resorts:
 
   - id: pitztal
     name: Pitztaler Gletscher
+    hotel_query: "St. Leonhard im Pitztal"
     country: AT
     top_m: 3440
     glacier: Pitztaler Gletscher
@@ -98,6 +102,7 @@ resorts:
 
   - id: kaunertal
     name: Kaunertaler Gletscher
+    hotel_query: "Kaunertal"
     country: AT
     top_m: 3113
     glacier: Kaunertaler Gletscher
@@ -117,6 +122,7 @@ resorts:
 
   - id: kaprun
     name: Kaprun / Kitzsteinhorn
+    hotel_query: "Kaprun"
     country: AT
     top_m: 3029
     glacier: Kitzsteinhorn
@@ -138,6 +144,7 @@ resorts:
 
   - id: cervinia
     name: Breuil-Cervinia
+    hotel_query: "Breuil-Cervinia"
     country: IT
     top_m: 3480
     glacier: Plateau Rosa
@@ -157,6 +164,7 @@ resorts:
 
   - id: senales
     name: Val Senales / Schnalstal
+    hotel_query: "Val Senales"
     country: IT
     top_m: 3212
     glacier: Hochjochferner
@@ -179,6 +187,7 @@ resorts:
 
   - id: tignes
     name: Tignes – Val d'Isère
+    hotel_query: "Tignes"
     country: FR
     top_m: 3456
     glacier: Grande Motte
@@ -200,6 +209,7 @@ resorts:
 
   - id: valthorens
     name: Val Thorens
+    hotel_query: "Val Thorens"
     country: FR
     top_m: 3230
     glacier: Péclet
@@ -223,6 +233,7 @@ resorts:
 
   - id: les2alpes
     name: Les 2 Alpes
+    hotel_query: "Les Deux Alpes"
     country: FR
     top_m: 3600
     glacier: Mont-de-Lans
@@ -244,6 +255,7 @@ resorts:
 
   - id: alpedhuez
     name: Alpe d'Huez
+    hotel_query: "Alpe d'Huez"
     country: FR
     top_m: 3330
     glacier: Sarenne / Pic Blanc
@@ -267,6 +279,7 @@ resorts:
 
   - id: molltal
     name: Mölltaler Gletscher
+    hotel_query: "Flattach"
     country: AT
     top_m: 3122
     glacier: Mölltaler Gletscher
@@ -286,6 +299,7 @@ resorts:
 
   - id: dachstein
     name: Dachstein Gletscher / Ramsau
+    hotel_query: "Ramsau am Dachstein"
     country: AT
     top_m: 2700
     glacier: Hallstätter Gletscher
@@ -305,6 +319,7 @@ resorts:
 
   - id: marmolada
     name: Marmolada (Arabba)
+    hotel_query: "Arabba"
     country: IT
     top_m: 3265
     glacier: Ghiacciaio della Marmolada
@@ -329,6 +344,7 @@ resorts:
 
   - id: chamonix
     name: Chamonix – Grands Montets
+    hotel_query: "Chamonix"
     country: FR
     top_m: 3275
     glacier: Glacier d'Argentière
@@ -348,6 +364,7 @@ resorts:
 
   - id: laplagne
     name: La Plagne
+    hotel_query: "La Plagne"
     country: FR
     top_m: 3250
     glacier: Glacier de la Chiaupe (Bellecôte)
@@ -370,6 +387,7 @@ resorts:
 
   - id: tonale
     name: Passo Tonale – Presena
+    hotel_query: "Passo del Tonale"
     country: IT
     top_m: 3069
     glacier: Ghiacciaio Presena
@@ -389,6 +407,7 @@ resorts:
 
   - id: zermatt
     name: Zermatt
+    hotel_query: "Zermatt"
     country: CH
     top_m: 3883
     glacier: Theodulgletscher / Klein Matterhorn
