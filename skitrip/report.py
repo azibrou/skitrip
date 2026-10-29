@@ -174,8 +174,8 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
 
 CSS = """
 :root{--bg:#fff;--fg:#000;--rule:#000;--hair:rgba(0,0,0,.12);--card:rgba(0,0,0,.04);--heat-l:0.86;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#202124;--fg:#d4d4d2;--rule:#d4d4d2;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}}
-:root[data-theme=dark]{--bg:#202124;--fg:#d4d4d2;--rule:#d4d4d2;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-optical-sizing:auto;font-feature-settings:"cv11","ss01";transition:background .25s,color .25s}
 main{width:100%;padding:32px 64px 72px}

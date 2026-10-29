@@ -80,11 +80,11 @@ class Store:
             out.setdefault((r["dest"], r["out_date"]), []).append(dict(r))
         return out
 
-    def route_stats(self) -> dict:
+    def route_stats(self, since: str = "") -> dict:
         """(город, аэропорт) → (сколько поисков, сколько с ценой, последний поиск) по прямым/обычным рейсам."""
         rows = self.db.execute("""
           SELECT origin, dest, COUNT(*), COUNT(price), MAX(scanned_at) FROM flights
-          WHERE COALESCE(source,'google')='google' GROUP BY origin, dest""").fetchall()
+          WHERE COALESCE(source,'google')='google' AND scanned_at >= ? GROUP BY origin, dest""", (since,)).fetchall()
         return {(o, d): (n, p, last) for o, d, n, p, last in rows}
 
     def flight_history(self, dest, out_date) -> list[float]:

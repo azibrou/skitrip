@@ -56,8 +56,69 @@ def parse(html: str) -> list[dict]:
     return out
 
 
+RPC_URL = ("https://www.google.com/_/FlightsFrontendUi/data/"
+           "travel.frontend.flights.FlightsFrontendService/GetShoppingResults")
+# max_stops из config → код Google: 0 любые, 1 без пересадок, 2 не больше одной, 3 не больше двух
+_STOPS = {None: 0, 0: 1, 1: 2, 2: 3}
+
+
+def _rpc_search(legs: list[tuple[str, str, dt.date]], trip: str, party: dict, cfg: dict) -> list[dict]:
+    """Тот же запрос за рейсами, что делает браузер на странице Google Flights.
+
+    Страница с рейсами часто приходит пустой («Fetching results»), а рейсы браузер
+    догружает отдельным запросом GetShoppingResults — без него на многих датах
+    выходило «нет рейсов», хотя они есть. Формат f.req — по разбору из github.com/punitarani/fli.
+    """
+    import json
+
+    from primp import Client
+
+    stops = _STOPS.get(cfg["flights"].get("max_stops"), 0)
+    segs = [[[[[a, 0]]], [[[b, 0]]], None, stops, None, None, d.isoformat(),
+             None, None, None, None, None, None, None, 3] for a, b, d in legs]
+    kids = len(party.get("children", []))
+    main = ([None, None, 1 if trip == "round-trip" else 2, None, [], 1, [party["adults"], kids, 0, 0],
+             None, None, None, None, None, None, segs] + [None] * 3 + [1] + [None] * 10 + [0])
+    freq = json.dumps([None, json.dumps([[], main, 2, 0, 0, 1], separators=(",", ":"))], separators=(",", ":"))
+    client = Client(impersonate="chrome_145", impersonate_os="macos", timeout=60,
+                    proxy=os.environ.get("FLIGHTS_PROXY") or None)
+    r = client.post(f"{RPC_URL}?curr={cfg['trip']['currency']}&hl=en-GB",
+                    content=("f.req=" + urllib.parse.quote(freq)).encode(),
+                    headers={"content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+                             "Cookie": CONSENT_COOKIE})
+    if r.status_code != 200:
+        raise RuntimeError(f"Google GetShoppingResults: HTTP {r.status_code}")
+    raw = r.text.lstrip()
+    raw = raw[4:].lstrip() if raw.startswith(")]}'") else raw
+    if raw[:1].isdigit():  # длина блока перед JSON
+        raw = raw.split("\n", 1)[1]
+    outer = json.loads(raw[: raw.rfind("]]") + 2])
+    if not outer or outer[0][2] is None:
+        raise RuntimeError("Google GetShoppingResults: пустой ответ")
+    inner = json.loads(outer[0][2])
+    out = []
+    for block in (inner[2], inner[3]):
+        for k in (block or [None])[0] or []:
+            try:
+                price, flight = k[1][0][1], k[0]
+            except (IndexError, TypeError):
+                continue
+            if price:
+                out.append({"price": float(price), "airlines": flight[1] or [], "legs": len(flight[2] or [])})
+    return out
+
+
 def _search(legs: list[tuple[str, str, dt.date]], trip: str, party: dict, cfg: dict) -> dict | None:
-    """Самый дешёвый вариант в выдаче Google или None."""
+    """Самый дешёвый вариант в выдаче Google или None.
+
+    Сначала запрос GetShoppingResults (как у браузера); если он сломался — старый разбор страницы.
+    """
+    try:
+        results = _rpc_search(legs, trip, party, cfg)
+        return min(results, key=lambda r: r["price"]) if results else None
+    except Exception as ex:  # формат поменялся или временный сбой — пробуем страницу
+        import sys
+        print(f"GetShoppingResults: {ex}; беру страницу", file=sys.stderr)
     from fast_flights import FlightQuery, FlightsNotFound, Passengers, create_query
 
     query = create_query(

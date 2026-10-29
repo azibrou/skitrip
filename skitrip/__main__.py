@@ -69,7 +69,7 @@ def skip_dead_routes(st, jobs, weeks, party, cfg, flights) -> list:
     """
     fc = cfg["flights"]
     min_rows, recheck = fc.get("dead_min_searches", 10), fc.get("recheck_days", 7)
-    stats = st.route_stats()
+    stats = st.route_stats(str(fc.get("dead_since", "")))
     probe_week = weeks[len(weeks) // 2]
     dead = set()
     for o, a in sorted({(j[1], j[2]) for j in jobs}):
