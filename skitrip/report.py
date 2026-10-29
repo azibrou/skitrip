@@ -170,7 +170,8 @@ CSS = """
 :root[data-theme=dark]{--bg:#202124;--fg:#d4d4d2;--rule:#d4d4d2;--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-optical-sizing:auto;font-feature-settings:"cv11","ss01";transition:background .25s,color .25s}
-main{max-width:1180px;margin:0 auto;padding:32px 16px 72px}
+main{width:100%;padding:32px 64px 72px}
+@media (max-width:700px){main{padding:24px 16px 56px}}
 h1{font-size:28px;font-weight:600;margin:0;letter-spacing:-.02em}
 h2{font-size:20px;font-weight:600;margin:44px 0 14px}h2 i{font-weight:400;font-size:16px}
 h3{font-size:17px;font-weight:600;margin:0}
