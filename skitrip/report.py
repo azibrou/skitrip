@@ -82,10 +82,9 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
     top = ranked(options)[:15]
 
     head = "".join(f"<th>{dshort(w)}</th>" for w in weeks)
-    # волна при появлении расходится от самой дешёвой клетки
-    best = min(((score(by[(r["id"], w)], full), ri, wi) for ri, r in enumerate(resorts) for wi, w in enumerate(weeks)
-                if (r["id"], w) in by and score(by[(r["id"], w)], full) is not None), default=(None, 0, 0))
-    r0, c0 = best[1], best[2]
+    # при появлении клетки проявляются по цене: сначала дешёвые, дорогие последними
+    order = {v: i for i, v in enumerate(sorted(set(totals)))}
+    REVEAL_MS = 600
     rows = []
     for ri, r in enumerate(resorts):
         cells = []
@@ -94,9 +93,8 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
             v = score(o, full) if o else None
             tip = eur(v) if v is not None else ("no data: " + ", ".join(o["missing"]) if o else "—")
             label = "" if v is None else f"{v/1000:.1f}"
-            d = round(((ri - r0) ** 2 + (wi - c0) ** 2) ** 0.5 * 32)
-            cls = ' class="best"' if (ri, wi) == (r0, c0) and v is not None else ""
-            cells.append(f'<td{cls} style="background:{heat_color(v, lo, hi)};--d:{d}ms" '
+            d = round(REVEAL_MS * order[v] / max(1, len(order) - 1)) if v is not None else 0
+            cells.append(f'<td style="background:{heat_color(v, lo, hi)};--d:{d}ms" '
                          f'title="{e(r["name"])}, {dshort(w)}: {e(tip)}">{label}</td>')
         short = r["name"].split(" · ")[0]
         base = f'<span class="via">from {e(r["base_name"])}</span>' if r.get("base_of") else ""
@@ -222,15 +220,10 @@ table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-
 dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font-size:14px}dt{font-style:italic}dd{margin:0}
 .lodg{margin:10px 0 0;padding-left:18px;font-size:14px}.warn{margin:10px 0 0;font-size:14px}
 @media (max-width:420px){.cards{grid-template-columns:1fr}dl{grid-template-columns:1fr}dt{margin-top:6px}}
-/* heatmap load: colour ripples out from the cheapest tile */
-.heat td{animation:ripple .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
-@keyframes ripple{0%{background-color:var(--card);color:transparent;transform:scale(.82)}
-  55%{transform:scale(1.06)}100%{transform:none}}
-.heat td.best{position:relative;z-index:1}
-.heat td.best::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  animation:ring 1.1s cubic-bezier(.2,.8,.2,1) .15s both}
-@keyframes ring{from{box-shadow:0 0 0 0 var(--fg);opacity:.55}to{box-shadow:0 0 0 14px var(--fg);opacity:0}}
-@media (prefers-reduced-motion:reduce){.heat td,.heat td.best::after{animation:none}body{transition:none}}
+/* heatmap load: tiles appear in price order — greens first, reds last */
+.heat td{animation:cheap .26s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d)}
+@keyframes cheap{from{background-color:var(--card);color:transparent;transform:scale(.6)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.heat td{animation:none}body{transition:none}}
 """
 
 THEME_BOOT = """(function(){try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}})();"""
