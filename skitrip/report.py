@@ -106,7 +106,7 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
         base = (f'<p>Stay in {e(r["base_name"])}, ~{r["base_km"]} km to the lifts'
                 f'{". " + e(r["base_note"]) if r.get("base_note") else ""}</p>' if r.get("base_of") else "")
         flight_note = (f'<dt></dt><dd><i>flight price for 3 seats rescaled to {sc["seats"]} — estimate</i></dd>'
-                       if a and a.get("ratio", 1) != 1 else "")
+                       if a and a.get("estimate") and a.get("ratio", 1) != 1 else "")
         cards.append(f"""
 <article class="card">
   <header><span class="rank">{i}</span><div><h3>{e(r['name'])}</h3>{base}

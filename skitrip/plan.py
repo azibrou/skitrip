@@ -52,24 +52,35 @@ def gkey(party: dict) -> str:
     return f"{party['adults']}+{len(party.get('children', []))}"
 
 
-def lodging_choice(rows, cfg: dict, families: int):
-    """Самое дешёвое жильё на группу из families семей: (цена, сводка, что это)."""
+def lodging_choice(rows, cfg: dict, families: int, party: dict | None = None):
+    """Самое дешёвое жильё на группу: (цена, сводка, что это).
+
+    families > 1 — N одинаковых семей; иначе одна группа party (по умолчанию cfg.party).
+    Airbnb берётся из поиска ровно на этот состав гостей; если такого поиска ещё нет —
+    из поиска на cfg.party с пометкой.
+    """
     stat = cfg["lodging"]["stat"]
-    g1, gf = gkey(cfg["party"]), gkey(scaled_party(cfg["party"], families))
+    g1 = gkey(cfg["party"])
+    own = gkey(party) if party and families == 1 else g1
+    gf = gkey(scaled_party(cfg["party"], families)) if families > 1 else own
     rows = [rows] if isinstance(rows, dict) else (rows or [])
     many = f" × {families}" if families > 1 else ""
+    have = {(r.get("kind") or "entire", r.get("guests") or g1) for r in rows if r.get(stat) is not None}
     cands = []
     for row in rows:
         price = row.get(stat)
         if price is None:
             continue
         kind, guests = row.get("kind") or "entire", row.get("guests") or g1
-        if kind == "entire" and guests == gf:
-            cands.append((price, row, "entire home" + (" for everyone" if families > 1 else "")))
+        # поиск на 2+1 вместо нужного состава — только пока точного нет
+        stand_in = guests == g1 and own != g1 and (kind, own) not in have
+        note = f" (searched for {g1} guests)" if stand_in else ""
+        if kind == "entire" and (guests == gf or (families == 1 and stand_in)):
+            cands.append((price, row, "entire home" + (" for everyone" if families > 1 else "") + note))
         elif kind == "entire" and guests == g1 and families > 1:
             cands.append((price * families, row, f"a home per family{many}"))
-        elif kind == "hotel" and guests == g1:
-            cands.append((price * families, row, f"hotel room, Airbnb{many}"))
+        elif kind == "hotel" and (guests == own or stand_in):
+            cands.append((price * families, row, f"hotel room, Airbnb{many}{note}"))
         elif kind == "ghotel":
             cands.append((price * families, row, f"hotel, Google Hotels — room for 2 adults{many}"))
     return min(cands, key=lambda c: c[0]) if cands else (None, None, None)
@@ -79,6 +90,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
           families: int = 1, scenario: dict | None = None) -> list[dict]:
     sc = scenario or scenarios({**cfg, "scenarios": [families]})[0]
     party, families, ratio = sc["party"], sc["units"], sc["air_ratio"]
+    base_pax, own_pax = gkey(cfg["party"]), gkey(party)
     nights = cfg["trip"]["nights"]
     stat = cfg["lodging"]["stat"]
     n_people = party["adults"] + len(party.get("children", []))
@@ -93,21 +105,29 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
             best_air = None
             for code, km in r["airports"].items():
                 quotes = flights.get((code, str(wk))) or []
-                for f in [quotes] if isinstance(quotes, dict) else quotes:
+                quotes = [quotes] if isinstance(quotes, dict) else quotes
+                # поиск ровно на этот состав; поиск на 2+1 с пересчётом — только если точного нет
+                exact = {(q.get("origin"), q.get("source") or "google") for q in quotes if (q.get("pax") or base_pax) == own_pax}
+                for f in quotes:
+                    is_exact = (f.get("pax") or base_pax) == own_pax
+                    if not is_exact and not ((f.get("pax") or base_pax) == base_pax
+                                             and (f.get("origin"), f.get("source") or "google") not in exact):
+                        continue
+                    k = 1 if is_exact else ratio
                     if f.get("price") is None:
                         continue
                     origin = f.get("origin") or cfg["trip"]["origin"]
                     if origin not in orig:
                         continue
                     # цена в базе — на одну семью (2+1); для другого состава пересчёт по местам (оценка)
-                    price = round(f["price"] * ratio, 2)
+                    price = round(f["price"] * k, 2)
                     cost = price + orig[origin] + transfer_cost(km, cfg)
                     if best_air is None or cost < best_air["air_and_car"]:
-                        best_air = {**f, "price": price, "ratio": ratio, "per_family": f["price"], "origin": origin, "ground": orig[origin], "airport": code, "km": km,
+                        best_air = {**f, "price": price, "ratio": k, "estimate": not is_exact, "per_family": f["price"], "origin": origin, "ground": orig[origin], "airport": code, "km": km,
                                     "hours": round(km / 70, 1), "transfer": transfer_cost(km, cfg),
                                     "air_and_car": round(cost, 2)}
 
-            lodging_price, lg, lodging_kind = lodging_choice(lodging.get((r["id"], str(wk))), cfg, families)
+            lodging_price, lg, lodging_kind = lodging_choice(lodging.get((r["id"], str(wk))), cfg, families, party)
 
             missing = []
             season = r.get("season") or {}

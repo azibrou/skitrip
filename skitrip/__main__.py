@@ -58,6 +58,12 @@ def cmd_run(args, cfg):
     resorts, weeks = select(args, cfg)
     st = Store(DB)
     party, nights = cfg["party"], cfg["trip"]["nights"]
+    # составы групп из сценариев: перелёты и Airbnb ищутся отдельно для каждого
+    groups = {plan.gkey(s["party"]): s for s in plan.scenarios(cfg)}
+    if args.pax:
+        groups = {k: v for k, v in groups.items() if k in args.pax}
+    fly = {k: s["party"] for k, s in groups.items()}
+    stay = {k: s["party"] for k, s in groups.items() if s["units"] == 1}  # жильё на одну группу
 
     if not args.skip_snow:
         from . import snow
@@ -73,14 +79,14 @@ def cmd_run(args, cfg):
         from . import flights
         airports = sorted({a for r in resorts for a in r["airports"]})
         origins = args.origins or list(plan.origins(cfg))
-        jobs = [(o, a, w) for o in origins for w in weeks for a in airports]
+        jobs = [(g, o, a, w) for g in fly for o in origins for w in weeks for a in airports]
         if args.limit:
             jobs = jobs[: args.limit]
         errors, prev = 0, st.latest_flights()
-        for i, (o, a, w) in enumerate(jobs, 1):
+        for i, (g, o, a, w) in enumerate(jobs, 1):
             ret = w + dt.timedelta(days=nights)
             try:
-                q = flights.fetch_best(o, a, w, ret, party, cfg)
+                q = flights.fetch_best(o, a, w, ret, fly[g], cfg)
                 errors = 0
             except Exception as ex:
                 errors += 1
@@ -89,31 +95,32 @@ def cmd_run(args, cfg):
                     print("Подряд слишком много ошибок — похоже на блокировку Google. Останавливаю перелёты.", file=sys.stderr)
                     break
                 continue
-            st.add_flight(o, a, w, ret, q)
+            st.add_flight(o, a, w, ret, q, pax=g)
             old = next((x for x in prev.get((a, str(w)), [])
-                        if x["origin"] == o and (x.get("source") or "google") == "google"), None)
+                        if x["origin"] == o and (x.get("source") or "google") == "google"
+                        and (x.get("pax") or plan.gkey(party)) == g), None)
             msg = f"{q['price']:.0f} €" if q else "нет рейсов"
             if q and old and old.get("price") and q["price"] <= old["price"] * (1 - cfg["alerts"]["drop_pct"] / 100):
                 msg += f"  ↓ было {old['price']:.0f} €"
-            print(f"[{i}/{len(jobs)}] {o}⇄{a} {w}: {msg}")
+            print(f"[{i}/{len(jobs)}] {g} {o}⇄{a} {w}: {msg}")
             _sleep(cfg["flights"]["delay_s"])
 
     if not args.skip_self and cfg.get("self_transfer", {}).get("enabled"):
         from . import selftransfer
         airports = {a for r in resorts for a in r["airports"]}
         origins = args.origins or list(plan.origins(cfg))
-        jobs = [(o, w) for o in origins for w in weeks]
-        for i, (o, w) in enumerate(jobs, 1):
+        jobs = [(g, o, w) for g in fly for o in origins for w in weeks]
+        for i, (g, o, w) in enumerate(jobs, 1):
             ret = w + dt.timedelta(days=nights)
             try:
-                found = selftransfer.search_week(o, w, ret, airports, party, cfg)
+                found = selftransfer.search_week(o, w, ret, airports, fly[g], cfg)
             except Exception as ex:
-                print(f"[{i}/{len(jobs)}] пересадки {o} {w}: ошибка {ex}", file=sys.stderr)
+                print(f"[{i}/{len(jobs)}] {g} пересадки {o} {w}: ошибка {ex}", file=sys.stderr)
                 continue
             for a in sorted(airports):
-                st.add_flight(o, a, w, ret, found.get(a), source="self")
+                st.add_flight(o, a, w, ret, found.get(a), source="self", pax=g)
             best = ", ".join(f"{a} {q['price']:.0f} €" for a, q in sorted(found.items(), key=lambda x: x[1]["price"])[:4])
-            print(f"[{i}/{len(jobs)}] пересадки {o} {w}: {len(found)} аэропортов. {best}")
+            print(f"[{i}/{len(jobs)}] {g} пересадки {o} {w}: {len(found)} аэропортов. {best}")
 
     hubs = cfg.get("self_transfer", {}).get("hubs") or []
     if not args.skip_hubs and hubs:
@@ -132,48 +139,49 @@ def cmd_run(args, cfg):
                     print(f"{hub}→{a}: ошибка {ex}", file=sys.stderr)
                 _sleep(cfg["flights"]["delay_s"])
             print(f"Из {hub} прямые рейсы в: {', '.join(served) or '—'}")
-            jobs = [(o, w) for o in origins for w in weeks if o != hub]
-            for i, (o, w) in enumerate(jobs, 1):
+            jobs = [(g, o, w) for g in fly for o in origins for w in weeks if o != hub]
+            for i, (g, o, w) in enumerate(jobs, 1):
                 ret = w + dt.timedelta(days=nights)
                 try:
-                    found = selftransfer.search_hub_week(o, hub, w, ret, served, party, cfg,
+                    found = selftransfer.search_hub_week(o, hub, w, ret, served, fly[g], cfg,
                                                          delay=cfg["flights"]["delay_s"])
                 except Exception as ex:
-                    print(f"[{i}/{len(jobs)}] через {hub} {o} {w}: ошибка {ex}", file=sys.stderr)
+                    print(f"[{i}/{len(jobs)}] {g} через {hub} {o} {w}: ошибка {ex}", file=sys.stderr)
                     continue
                 for a in airports:
-                    st.add_flight(o, a, w, ret, found.get(a), source=f"hub-{hub}")
+                    st.add_flight(o, a, w, ret, found.get(a), source=f"hub-{hub}", pax=g)
                 best = ", ".join(f"{a} {q['price']:.0f} €" for a, q in sorted(found.items(), key=lambda x: x[1]["price"])[:4])
-                print(f"[{i}/{len(jobs)}] через {hub} {o} {w}: {best or 'нет связок'}")
+                print(f"[{i}/{len(jobs)}] {g} через {hub} {o} {w}: {best or 'нет связок'}")
 
     if not args.skip_lodging:
         from . import lodging
-        big = max((s["party"] for s in plan.scenarios(cfg)), key=lambda x: x["adults"] + len(x["children"]))
-        # тип жилья → (как искать, состав гостей)
-        kinds = {
-            "entire": (lambda r, w: lodging.fetch(r, w, nights, party, cfg), plan.gkey(party)),
-            "entire-big": (lambda r, w: lodging.fetch(r, w, nights, big, cfg, min_bedrooms=2), plan.gkey(big)),
-            "hotel": (lambda r, w: lodging.fetch(r, w, nights, party, cfg, kind="hotel"), plan.gkey(party)),
-            "ghotel": (lambda r, w: lodging.google_hotels(r, w, nights, cfg), "2+0"),
-        }
+        # тип из config → [(как искать, тип в базе, состав гостей)] — по каждому составу из сценариев
+        kinds: dict = {"entire": [], "hotel": [], "entire-big": [],
+                       "ghotel": [(lambda r, w: lodging.google_hotels(r, w, nights, cfg), "ghotel", "2+0")]}
+        for g, p in stay.items():
+            kinds["entire"].append((lambda r, w, p=p: lodging.fetch(r, w, nights, p, cfg), "entire", g))
+            kinds["hotel"].append((lambda r, w, p=p: lodging.fetch(r, w, nights, p, cfg, kind="hotel"), "hotel", g))
+        for g, s in groups.items():
+            if s["units"] > 1:
+                kinds["entire-big"].append((lambda r, w, p=s["party"]: lodging.fetch(r, w, nights, p, cfg, min_bedrooms=2),
+                                            "entire", g))
         wanted = args.lodging_kinds or cfg["lodging"].get("kinds") or ["entire"]
         done = set()
         if args.skip_done:  # уже собранное сегодня не повторяем
             today = dt.date.today().isoformat()
             done = {(x["resort"], x["check_in"], x.get("kind") or "entire", x.get("guests") or plan.gkey(party))
                     for rows in st.latest_lodging().values() for x in rows if x["scanned_at"] >= today}
-        jobs = [(k, r, w) for k in wanted for r in resorts for w in weeks
-                if (r["id"], str(w), "entire" if k == "entire-big" else k, kinds[k][1]) not in done]
+        jobs = [(job, r, w) for k in wanted for job in kinds[k] for r in resorts for w in weeks
+                if (r["id"], str(w), job[1], job[2]) not in done]
         if args.limit:
             jobs = jobs[: args.limit]
-        for i, (k, r, w) in enumerate(jobs, 1):
-            fetch, guests = kinds[k]
+        for i, ((fetch, k, guests), r, w) in enumerate(jobs, 1):
             try:
                 s = fetch(r, w)
             except Exception as ex:
                 print(f"[{i}/{len(jobs)}] {k} {r['id']} {w}: ошибка {ex}", file=sys.stderr)
                 continue
-            st.add_lodging(r["id"], w, nights, s, kind="entire" if k == "entire-big" else k, guests=guests)
+            st.add_lodging(r["id"], w, nights, s, kind=k, guests=guests)
             print(f"[{i}/{len(jobs)}] {k} {guests} {r['name']} {w}: {s['n']} вариантов, p25 {s['p25']}, медиана {s['median']}")
             _sleep(cfg["lodging"]["delay_s"] if k != "ghotel" else cfg["flights"]["delay_s"])
 
@@ -250,6 +258,7 @@ def main(argv=None):
             p.add_argument("--origins", nargs="*", help="города вылета, по умолчанию все из config.yaml")
             p.add_argument("--lodging-kinds", nargs="*", choices=["entire", "entire-big", "hotel", "ghotel"],
                            help="типы жилья, по умолчанию lodging.kinds из config.yaml")
+            p.add_argument("--pax", nargs="*", help="составы групп, напр. 2+0 1+0; по умолчанию все из scenarios")
             p.add_argument("--skip-done", action="store_true", help="не повторять жильё, уже собранное сегодня")
     args = ap.parse_args(argv)
     cfg = load_config(args.config)

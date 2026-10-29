@@ -29,6 +29,9 @@ class Store:
             self.db.execute("ALTER TABLE flights ADD COLUMN source TEXT")
             self.db.execute("ALTER TABLE flights ADD COLUMN detail TEXT")
             self.db.commit()
+        if "pax" not in cols:  # состав группы, для которой искали ('2+1'); NULL — старые сканы на 2+1
+            self.db.execute("ALTER TABLE flights ADD COLUMN pax TEXT")
+            self.db.commit()
         cols = {r[1] for r in self.db.execute("PRAGMA table_info(lodging)")}
         if "kind" not in cols:  # entire | hotel (Airbnb) | ghotel (Google Hotels); guests — '2+1'
             self.db.execute("ALTER TABLE lodging ADD COLUMN kind TEXT")
@@ -39,13 +42,13 @@ class Store:
     def now() -> str:
         return dt.datetime.now().isoformat(timespec="seconds")
 
-    def add_flight(self, origin, dest, out, ret, q: dict | None, source: str = "google"):
+    def add_flight(self, origin, dest, out, ret, q: dict | None, source: str = "google", pax: str | None = None):
         q = q or {}
         self.db.execute(
-            "INSERT INTO flights (scanned_at, origin, dest, out_date, ret_date, price, airlines, stops, url, source, detail)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO flights (scanned_at, origin, dest, out_date, ret_date, price, airlines, stops, url, source, detail, pax)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (self.now(), origin, dest, str(out), str(ret), q.get("price"), q.get("airlines"), q.get("stops"),
-             q.get("url"), source, q.get("detail")),
+             q.get("url"), source, q.get("detail"), pax),
         )
         self.db.commit()
 
@@ -68,10 +71,10 @@ class Store:
         """{(аэропорт, дата вылета): [последняя цена по каждому городу вылета и источнику]}."""
         rows = self.db.execute("""
           SELECT f.* FROM flights f JOIN (
-            SELECT origin, dest, out_date, ret_date, COALESCE(source,'google') s, MAX(scanned_at) m
-            FROM flights GROUP BY origin, dest, out_date, ret_date, s
+            SELECT origin, dest, out_date, ret_date, COALESCE(source,'google') s, COALESCE(pax,'') p, MAX(scanned_at) m
+            FROM flights GROUP BY origin, dest, out_date, ret_date, s, p
           ) l ON f.origin=l.origin AND f.dest=l.dest AND f.out_date=l.out_date AND f.ret_date=l.ret_date
-             AND COALESCE(f.source,'google')=l.s AND f.scanned_at=l.m""").fetchall()
+             AND COALESCE(f.source,'google')=l.s AND COALESCE(f.pax,'')=l.p AND f.scanned_at=l.m""").fetchall()
         out: dict = {}
         for r in rows:
             out.setdefault((r["dest"], r["out_date"]), []).append(dict(r))
