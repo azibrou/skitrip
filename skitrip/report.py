@@ -40,7 +40,7 @@ def air_rows(a, r, cfg) -> str:
     if a:
         orig = a.get("origin") or cfg["trip"]["origin"]
         detail = f'<br><span class="mut">{e(a["detail"])}</span>' if a.get("detail") else ""
-        ground = (f'<dt>Дорога до {e(orig)}</dt><dd>{eur(a["ground"])} <span class="mut">автобус из Таллина, на всех туда-обратно</span></dd>'
+        ground = (f'<dt>Дорога до {e(orig)}</dt><dd>{eur(a["ground"])} <span class="mut">дорога до аэропорта вылета</span></dd>'
                   if a.get("ground") else "")
         return (f'<dt>Перелёт {e(orig)}⇄{e(a["airport"])}</dt><dd><a href="{e(a["url"])}">{eur(a["price"])}</a> '
                 f'<span class="mut">{e(a.get("airlines") or "")}{", пересадок: " + str(a["stops"]) if a.get("stops") else ""}</span>{detail}</dd>'
