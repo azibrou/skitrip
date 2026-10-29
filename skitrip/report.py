@@ -205,7 +205,8 @@ table.heat{border-collapse:separate;border-spacing:2px;font-size:12px;table-layo
 .heat td{height:38px;border-radius:3px;overflow:hidden}
 .heat th.rn{text-align:left;padding:3px 10px 3px 0;line-height:1.25;overflow-wrap:anywhere}
 .heat .via{display:block;font-style:italic}
-@media (max-width:900px){.heat{font-size:10px;border-spacing:1px}.heat thead th{font-size:9px;writing-mode:vertical-rl;transform:rotate(180deg);height:46px;padding:4px 0}}
+@media (max-width:1024px){.heat thead th{writing-mode:vertical-rl;transform:rotate(180deg);height:52px;padding:4px 0;vertical-align:bottom}}
+@media (max-width:900px){.heat{font-size:10px;border-spacing:1px}.heat thead th{font-size:9px;height:46px}}
 @media (max-width:600px){.heat td{font-size:0}.heat td{height:30px}}
 /* reference table: book rules */
 table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-top:2px solid var(--rule);border-bottom:2px solid var(--rule)}
