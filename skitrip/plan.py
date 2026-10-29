@@ -92,6 +92,7 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
     party, families, ratio = sc["party"], sc["units"], sc["air_ratio"]
     base_pax, own_pax = gkey(cfg["party"]), gkey(party)
     hubs = set((cfg.get("self_transfer") or {}).get("hubs") or [])
+    self_on = (cfg.get("self_transfer") or {}).get("enabled", False)
     nights = cfg["trip"]["nights"]
     stat = cfg["lodging"]["stat"]
     n_people = party["adults"] + len(party.get("children", []))
@@ -112,6 +113,8 @@ def build(cfg: dict, resorts: list[dict], weeks: list[dt.date], flights: dict, l
                 # пересадки через хаб — только если хаб всё ещё включён в config
                 quotes = [q for q in quotes if not (q.get("source") or "").startswith("hub-")
                           or q["source"][4:] in hubs]
+                if not self_on:  # самостоятельные пересадки Ryanair выключены
+                    quotes = [q for q in quotes if q.get("source") != "self"]
                 # поиск ровно на этот состав; поиск на 2+1 с пересчётом — только если точного нет
                 exact = {(q.get("origin"), q.get("source") or "google") for q in quotes if (q.get("pax") or base_pax) == own_pax}
                 for f in quotes:

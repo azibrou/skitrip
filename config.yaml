@@ -24,7 +24,7 @@ flights:
   max_consecutive_errors: 4
 
 self_transfer:                # два отдельных билета Ryanair через хаб, с повторной регистрацией
-  enabled: true
+  enabled: false              # выключено: два билета с повторной регистрацией и багажом — неудобно
   min_connection_h: 3         # запас между рейсами
   hubs: []                    # пересадки через хабы (Google + Ryanair) выключены: Варшава — отдельный город вылета
 
