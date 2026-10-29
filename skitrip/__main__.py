@@ -77,7 +77,7 @@ def cmd_run(args, cfg):
         for i, (a, w) in enumerate(jobs, 1):
             ret = w + dt.timedelta(days=nights)
             try:
-                q = flights.fetch_roundtrip(cfg["trip"]["origin"], a, w, ret, party, cfg)
+                q = flights.fetch_best(cfg["trip"]["origin"], a, w, ret, party, cfg)
                 errors = 0
             except Exception as ex:
                 errors += 1

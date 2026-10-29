@@ -93,3 +93,16 @@ def fetch_roundtrip(origin: str, dest: str, out: dt.date, ret: dt.date, party: d
     airlines = list(dict.fromkeys(there["airlines"] + back["airlines"]))
     return {"price": there["price"] + back["price"], "airlines": ", ".join(airlines) + " (2 × в одну сторону)",
             "stops": max(there["legs"], back["legs"]) - 1, "url": url}
+
+
+def fetch_best(origin: str, dest: str, out: dt.date, ret: dt.date, party: dict, cfg: dict) -> dict | None:
+    """Дешевле из Google Flights и прямого запроса к Ryanair."""
+    from . import ryanair
+
+    google = fetch_roundtrip(origin, dest, out, ret, party, cfg)
+    try:
+        fr = ryanair.fetch_roundtrip(origin, dest, out, ret, party, cfg)
+    except Exception:  # Ryanair недоступен — остаёмся с Google
+        fr = None
+    options = [x for x in (google, fr) if x]
+    return min(options, key=lambda x: x["price"]) if options else None

@@ -1,4 +1,4 @@
-# Ледниковые курорты IT / FR / AT с катанием выше 3000 м (Passo Tonale исключён).
+# Ледниковые курорты IT / FR / AT (Passo Tonale исключён).
 #
 # lift_pass — цена ски-пасса на `days` дней, по периодам сезона.
 #   periods: первый период, в который попадает дата первого ски-дня; иначе default.
@@ -248,3 +248,104 @@ resorts:
       child_tiers:
         - {max_age: 4, price: 0}
         - {max_age: 12, price: child}
+
+  # --- Ледники, добавленные 29.10.2026 (в т.ч. ниже 3000 м) ---
+
+  - id: molltal
+    name: Mölltaler Gletscher
+    country: AT
+    top_m: 3122
+    glacier: Mölltaler Gletscher
+    coords: [46.9930, 13.0580]
+    lodging_bbox: [46.88, 13.02, 46.97, 13.24]   # Flattach, Obervellach, Mallnitz
+    airports: {KLU: 110, LJU: 180, SZG: 190, GRZ: 230, VCE: 280, MUC: 330}
+    lift_pass:
+      pass_name: Skipass Mölltaler Gletscher
+      days: 6
+      status: verified_2026_27
+      source: https://www.schneehoehen.de/skigebiete/preise/moelltaler-gletscher
+      periods: []
+      default: {name: Hauptsaison, adult: 376.00, child: 188.00}
+      child_tiers:
+        - {born_from: 2021-01-01, price: 0, note: "младше Jg. 2020 — предположение, что бесплатно; проверить"}
+        - {born_from: 2011-01-01, price: child, note: "Kinder Jg. 2011–2020"}
+
+  - id: dachstein
+    name: Dachstein Gletscher / Ramsau
+    country: AT
+    top_m: 2700
+    glacier: Hallstätter Gletscher
+    coords: [47.4750, 13.6070]
+    lodging_bbox: [47.37, 13.58, 47.45, 13.76]   # Ramsau am Dachstein, Schladming
+    airports: {SZG: 95, LNZ: 160, GRZ: 180, MUC: 230, VIE: 290}
+    lift_pass:
+      pass_name: Ski amadé (Schladming-Dachstein + Gletscher)
+      days: 6
+      status: estimate
+      source: https://www.schneehoehen.de/skigebiete/preise/schladming-dachstein
+      periods: []
+      default: {name: "оценка: 7 дней Schladming 26/27 = 377 €", adult: 365.00, child: 182.50}
+      child_tiers:
+        - {born_from: 2021-01-01, price: 0, note: "Ski amadé: младшие дети бесплатно — проверить год"}
+        - {born_from: 2011-01-01, price: child}
+
+  - id: marmolada
+    name: Marmolada (Arabba)
+    country: IT
+    top_m: 3265
+    glacier: Ghiacciaio della Marmolada
+    coords: [46.4380, 11.8640]
+    lodging_bbox: [46.40, 11.83, 46.52, 11.93]   # Arabba, Malga Ciapela, Rocca Pietore
+    airports: {TSF: 140, VCE: 165, INN: 200, VRN: 230, BGY: 320, MUC: 320, MXP: 380}
+    lift_pass:
+      pass_name: Dolomiti Superski
+      days: 6
+      status: verified_2026_27
+      source: https://www.dolomitisuperski.com/dam/jcr:92f51c2d-ec03-4c05-9a48-8cf67db8e301/Dolomiti_Superski_Comunicato_Stampa_Inverno_2026_27_Novita_Prezzi.pdf
+      periods:
+        - {name: "низкий сезон (даты — по схеме прошлых лет)", from: 2026-11-28, to: 2026-12-19, adult: 407.00, child: 285.00}
+        - {name: "низкий сезон", from: 2027-01-07, to: 2027-01-30, adult: 407.00, child: 285.00}
+        - {name: "низкий сезон", from: 2027-03-20, to: 2027-04-25, adult: 407.00, child: 285.00}
+      default: {name: "высокий сезон", adult: 453.00, child: 317.00}
+      child_tiers:
+        - {born_from: 2018-11-25, price: 0, note: "до 8 лет бесплатно с платящим взрослым (правило прошлых сезонов)"}
+        - {max_age: 15, price: child, note: "детская цена ≈70% — оценка"}
+
+  - id: chamonix
+    name: Chamonix – Grands Montets
+    country: FR
+    top_m: 3275
+    glacier: Glacier d'Argentière
+    coords: [45.9580, 6.9800]
+    lodging_bbox: [45.90, 6.84, 46.00, 6.99]     # Chamonix, Argentière, Les Houches
+    airports: {GVA: 90, TRN: 150, LYS: 220}
+    lift_pass:
+      pass_name: Chamonix Le Pass
+      days: 6
+      status: estimate
+      source: https://www.schneehoehen.de/skigebiete/preise/chamonix-mont-blanc
+      periods: []
+      default: {name: "оценка: 360 € в 25/26 + ~3,6%", adult: 373.00, child: 317.00}
+      child_tiers:
+        - {max_age: 4, price: 0}
+        - {max_age: 14, price: child}
+
+  - id: laplagne
+    name: La Plagne
+    country: FR
+    top_m: 3250
+    glacier: Glacier de la Chiaupe (Bellecôte)
+    coords: [45.5070, 6.6780]
+    lodging_bbox: [45.48, 6.64, 45.56, 6.75]
+    airports: {CMF: 120, GVA: 190, LYS: 200, TRN: 230}
+    lift_pass:
+      pass_name: La Plagne (без Paradiski)
+      days: 6
+      status: estimate
+      source: https://www.skiinfo.fr/alpes-du-nord/la-plagne/forfaits-de-ski.html
+      periods:
+        - {name: "с 12.12 (ski-planet)", from: 2026-12-12, to: 2026-12-18, adult: 314.50, child: 251.50}
+      default: {name: "неделя, skiinfo; child — оценка 80%", adult: 348.00, child: 278.00}
+      child_tiers:
+        - {max_age: 4, price: 0}
+        - {max_age: 13, price: child}
