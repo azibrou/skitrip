@@ -226,7 +226,7 @@ table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-
 .card{background:var(--card);border-radius:10px;padding:24px}
 .card header{display:flex;gap:16px;align-items:flex-start}.card header>div{flex:1;min-width:0}.card header p{font-size:14px}
 .tot{font-size:17px;line-height:inherit;font-weight:600;font-variant-numeric:tabular-nums;flex:none;margin-left:auto;text-align:right;white-space:nowrap}
-dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font-size:14px}dt{font-style:italic}dd{margin:0}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font-size:14px}dt{font-weight:600}dd{margin:0}
 .lodg{margin:10px 0 0;padding:0;list-style:none;font-size:14px}.warn{margin:10px 0 0;font-size:14px}
 @media (max-width:700px){.cards{grid-template-columns:1fr}}
 @media (max-width:420px){dl{grid-template-columns:1fr}dt{margin-top:6px}}
