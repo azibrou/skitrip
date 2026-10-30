@@ -224,6 +224,7 @@ table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-
 .ref tbody tr+tr td{border-top:1px solid var(--hair)}
 .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .card{background:var(--card);border-radius:10px;padding:24px}
+.card i{font-style:normal}
 .card header{display:flex;gap:16px;align-items:flex-start}.card header>div{flex:1;min-width:0}.card header p{font-size:14px}
 .tot{font-size:17px;line-height:inherit;font-weight:600;font-variant-numeric:tabular-nums;flex:none;margin-left:auto;text-align:right;white-space:nowrap}
 dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font-size:14px}dt{font-weight:600}dd{margin:0}
