@@ -173,9 +173,9 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
 
 
 CSS = """
-:root{--bg:#fff;--fg:#000;--rule:#000;--hair:rgba(0,0,0,.12);--card:rgba(0,0,0,.04);--heat-l:0.86;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}}
-:root[data-theme=dark]{--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
+:root{--bg:#fff;--fg:#000;--rule:#000;--link:#0b57d0;--hair:rgba(0,0,0,.12);--card:rgba(0,0,0,.04);--heat-l:0.86;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--link:#8ab4f8;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--link:#8ab4f8;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-optical-sizing:auto;font-feature-settings:"cv11","ss01";transition:background .25s,color .25s}
 main{width:100%;padding:32px 64px 72px}
@@ -183,7 +183,7 @@ main{width:100%;padding:32px 64px 72px}
 h1{font-size:28px;font-weight:600;margin:0;letter-spacing:-.02em}
 h2{font-size:20px;font-weight:600;margin:44px 0 14px}h2 i{font-weight:400;font-size:16px}
 h3{font-size:17px;font-weight:600;margin:0}
-a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+a{color:var(--link);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
 :focus-visible{outline:2px solid var(--rule);outline-offset:2px}
 p{margin:0}.meta{margin:14px 0 0}.cap{margin:12px 0 0;font-size:14px}.note{margin:12px 0 0}
 .lede{font-size:17px;margin:4px 0 0}
