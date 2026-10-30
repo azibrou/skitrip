@@ -173,9 +173,9 @@ def _section(cfg: dict, resorts: list[dict], weeks: list[dt.date], options: list
 
 
 CSS = """
-:root{--bg:#fff;--fg:#000;--rule:#000;--link:#0b57d0;--hair:rgba(0,0,0,.12);--card:rgba(0,0,0,.04);--heat-l:0.86;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--link:#8ab4f8;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}}
-:root[data-theme=dark]{--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--link:#8ab4f8;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
+:root{--bg:#fff;--fg:#000;--rule:#000;--link:#0000ee;--hair:rgba(0,0,0,.12);--card:rgba(0,0,0,.04);--heat-l:0.86;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--link:#a3a3ff;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#1d2330;--fg:#d3d8e0;--rule:#d3d8e0;--link:#a3a3ff;--hair:rgba(255,255,255,.12);--card:rgba(255,255,255,.05);--heat-l:0.42;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-optical-sizing:auto;font-feature-settings:"cv11","ss01";transition:background .25s,color .25s}
 main{width:100%;padding:32px 64px 72px}
@@ -223,9 +223,9 @@ table.ref{border-collapse:collapse;font-size:13px;overflow-wrap:anywhere;border-
 .ref .num{text-align:right}
 .ref tbody tr+tr td{border-top:1px solid var(--hair)}
 .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.card{background:var(--card);border-radius:10px;padding:16px}
-.card header{display:flex;gap:10px;align-items:flex-start}.card header>div{flex:1}.card header p{font-size:14px}
-.tot{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.card{background:var(--card);border-radius:10px;padding:24px}
+.card header{display:flex;gap:16px;align-items:flex-start}.card header>div{flex:1;min-width:0}.card header p{font-size:14px}
+.tot{font-size:17px;line-height:inherit;font-weight:600;font-variant-numeric:tabular-nums;flex:none;margin-left:auto;text-align:right;white-space:nowrap}
 dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0 0;font-size:14px}dt{font-style:italic}dd{margin:0}
 .lodg{margin:10px 0 0;padding-left:18px;font-size:14px}.warn{margin:10px 0 0;font-size:14px}
 @media (max-width:700px){.cards{grid-template-columns:1fr}}
