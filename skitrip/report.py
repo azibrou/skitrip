@@ -63,7 +63,7 @@ def air_rows(a, r, cfg) -> str:
         ground = (f'<dt>Getting to {e(orig)}</dt><dd>{eur(a["ground"])}</dd>' if a.get("ground") else "")
         drive = (f'<dt>Car and fuel</dt><dd>{eur(a["transfer"])} <i>{a["km"]} km each way</i></dd>' if a["transfer"]
                  else f'<dt>Drive</dt><dd>{a["km"]} km from the airport, ~{a["hours"]} h <i>not in the total</i></dd>')
-        return (f'<dt>Flight {e(orig)}⇄{e(a["airport"])}</dt><dd><a href="{e(a["url"])}">{eur(a["price"])}</a> '
+        return (f'<dt>Flight {e(orig)}⇄{e(a["airport"])}</dt><dd>{eur(a["price"])} '
                 f'<i>{e(tr(a.get("airlines")))}{stops}</i>{detail}</dd>' + ground + drive)
     code, km = min(r["airports"].items(), key=lambda x: x[1])
     return (f'<dt>Flight</dt><dd><i>no data — search {e(", ".join(r["airports"]))} by hand</i></dd>'
